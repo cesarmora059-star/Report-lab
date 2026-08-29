@@ -1,121 +1,2275 @@
 'use strict';
 
-const $ = (s) => document.querySelector(s);
-const imagen = $('#imagen');
-const leer = $('#leer-imagen');
-const previa = $('#vista-previa');
-const estado = $('#estado-ocr');
+const $ = selector => document.querySelector(selector);
+
+const imagenInput = $('#imagen');
+const botonLeer = $('#leer-imagen');
+const vistaPrevia = $('#vista-previa');
+const estadoOCR = $('#estado-ocr');
+
 const form = $('#form-reporte');
 const tbody = $('#filas-resultados');
+
 const especieSelect = $('#especie');
 
-const CONFIG = {
-  perro: {
-    filas: {
-      WBC:[.125,'6.0','17.0',1], LYM:[.168,'0.9','5.0',1], MONO:[.205,'0.3','1.5',1], NEUT:[.243,'3.5','12.0',1], EOS:[.281,'0.1','1.5',1],
-      HGB:[.332,'12.0','18.0',1], HCT:[.386,'37.0','55.0',1], RBC:[.431,'5.50','8.50',2], MCV:[.465,'60.0','72.0',1], MCHC:[.510,'32.0','38.5',1], RDW:[.552,'12.0','17.5',1], PLT:[.603,'200','500',0]
-    }
-  },
-  gato: {
-    filas: {
-      WBC:[.157,'5.5','19.5',1], LYM:[.213,'1.0','7.0',1], MONO:[.261,'0.2','1.0',1], GRAN:[.310,'2.8','13.0',1],
-      HGB:[.414,'8.0','15.0',1], HCT:[.480,'25.0','45.0',1], RBC:[.534,'5.00','11.00',2], MCV:[.580,'39.0','50.0',1], MCHC:[.626,'31.0','38.5',1], RDW:[.672,'14.0','18.5',1], PLT:[.727,'200','500',0]
-    }
-  }
-};
-const NOMBRES = {RDW:'RDW%'};
+const calidadGeneral = $('#calidad-general');
+const avisosCalidad = $('#avisos-calidad');
 
-function hoyLocal(){ const d=new Date(); const o=d.getTimezoneOffset(); return new Date(d.getTime()-o*60000).toISOString().slice(0,10); }
-function numeroReporte(){
-  const d=new Date(); const p=n=>String(n).padStart(2,'0');
-  const base=`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
-  const rand=(window.crypto && window.crypto.getRandomValues) ? window.crypto.getRandomValues(new Uint16Array(1))[0].toString(36).toUpperCase().slice(0,3) : Math.random().toString(36).slice(2,5).toUpperCase();
-  return `${base}-${rand}`;
+const CONFIG = window.VETLAB_CONFIG;
+
+
+/* =========================================================
+   ESTADO
+========================================================= */
+
+let ultimaPantalla = null;
+let resultadosActuales = [];
+let especieActual = '';
+
+
+
+/* =========================================================
+   UTILIDADES
+========================================================= */
+
+function hoyLocal() {
+
+  const fecha = new Date();
+
+  const offset = fecha.getTimezoneOffset();
+
+  return new Date(
+    fecha.getTime() - offset * 60000
+  )
+    .toISOString()
+    .slice(0, 10);
 }
-$('#fecha').value = hoyLocal();
-$('#numero_reporte').value = numeroReporte();
 
-function setEstado(texto,tipo=''){ estado.hidden=false; estado.className='status-box'+(tipo?` ${tipo}`:''); estado.textContent=texto; }
-function titulo(v){ if(!v)return ''; v=String(v).trim().toLowerCase(); return v.charAt(0).toUpperCase()+v.slice(1); }
-function clave(p){ return p.toLowerCase().replace('%','pct'); }
-function htmlEsc(v){ return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function filasPorTipo(tipo){ return Object.keys(CONFIG[tipo]?.filas || CONFIG.perro.filas).map(k=>NOMBRES[k]||k); }
-function cfg(tipo,param){ return CONFIG[tipo].filas[param==='RDW%'?'RDW':param]; }
 
-function crearFilas(tipo, detectadas=[]){
-  const mapa=Object.fromEntries(detectadas.map(f=>[f.parametro,f])); tbody.innerHTML='';
-  filasPorTipo(tipo).forEach(param=>{
-    const c=cfg(tipo,param); const d=mapa[param]||{minimo:c[1],maximo:c[2],resultado:'',bandera:''}; const k=clave(param); const tr=document.createElement('tr');
-    tr.innerHTML=`<th>${param}</th><td><input name="${k}_resultado" inputmode="decimal" value="${htmlEsc(d.resultado)}" required></td><td><input name="${k}_minimo" inputmode="decimal" value="${htmlEsc(d.minimo)}" required></td><td><input name="${k}_maximo" inputmode="decimal" value="${htmlEsc(d.maximo)}" required></td><td><select name="${k}_bandera"><option value="">Normal</option><option value="H" ${d.bandera==='H'?'selected':''}>H · Alto</option><option value="L" ${d.bandera==='L'?'selected':''}>L · Bajo</option></select></td>`;
-    tbody.appendChild(tr);
+function generarNumeroReporte() {
+
+  const fecha = new Date();
+
+  const dos = numero =>
+    String(numero).padStart(2, '0');
+
+  const base =
+    fecha.getFullYear() +
+    dos(fecha.getMonth() + 1) +
+    dos(fecha.getDate()) +
+    '-' +
+    dos(fecha.getHours()) +
+    dos(fecha.getMinutes()) +
+    dos(fecha.getSeconds());
+
+  let aleatorio;
+
+  if (
+    window.crypto &&
+    window.crypto.getRandomValues
+  ) {
+
+    const valores =
+      window.crypto.getRandomValues(
+        new Uint16Array(1)
+      );
+
+    aleatorio =
+      valores[0]
+        .toString(36)
+        .toUpperCase()
+        .slice(0, 3);
+
+  } else {
+
+    aleatorio =
+      Math.random()
+        .toString(36)
+        .slice(2, 5)
+        .toUpperCase();
+
+  }
+
+  return `${base}-${aleatorio}`;
+}
+
+
+function mostrarEstado(texto, tipo = '') {
+
+  estadoOCR.hidden = false;
+
+  estadoOCR.className =
+    'status-box' +
+    (tipo ? ` ${tipo}` : '');
+
+  estadoOCR.textContent = texto;
+}
+
+
+function escaparHTML(valor) {
+
+  return String(valor ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+
+/*
+ * BARQUERO → Barquero
+ * MARIA JOSE → Maria Jose
+ * JUAN-CARLOS → Juan-Carlos
+ */
+function normalizarNombre(valor) {
+
+  const texto = String(valor || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+
+  if (!texto) {
+    return '';
+  }
+
+  return texto
+    .split(' ')
+    .map(palabra => {
+
+      return palabra
+        .split('-')
+        .map(parte => {
+
+          if (!parte) {
+            return '';
+          }
+
+          return (
+            parte.charAt(0).toUpperCase() +
+            parte.slice(1)
+          );
+
+        })
+        .join('-');
+
+    })
+    .join(' ');
+}
+
+
+function numeroValido(valor) {
+
+  const n = Number(valor);
+
+  return Number.isFinite(n);
+}
+
+
+function diferenciaRelativa(a, b) {
+
+  if (!numeroValido(a) || !numeroValido(b)) {
+    return Infinity;
+  }
+
+  const mayor =
+    Math.max(
+      Math.abs(Number(a)),
+      Math.abs(Number(b)),
+      0.0001
+    );
+
+  return (
+    Math.abs(Number(a) - Number(b)) /
+    mayor
+  );
+}
+
+
+/* =========================================================
+   IMAGEN
+========================================================= */
+
+function cargarImagen(file) {
+
+  return new Promise((resolve, reject) => {
+
+    const reader = new FileReader();
+
+    reader.onload = evento => {
+
+      const img = new Image();
+
+      img.onload = () => resolve(img);
+
+      img.onerror = () =>
+        reject(
+          new Error(
+            'No se pudo abrir la fotografía.'
+          )
+        );
+
+      img.src = evento.target.result;
+    };
+
+    reader.onerror = () =>
+      reject(
+        new Error(
+          'No se pudo leer la fotografía.'
+        )
+      );
+
+    reader.readAsDataURL(file);
   });
 }
-crearFilas('perro');
 
-function cargarImagen(file){ return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=e=>{const img=new Image(); img.onload=()=>resolve(img); img.onerror=()=>reject(new Error('No se pudo abrir la fotografía.')); img.src=e.target.result;}; r.onerror=()=>reject(new Error('No se pudo leer la fotografía.')); r.readAsDataURL(file); }); }
-function prepararCanvas(img){
-  const max=1800; const scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)); const w=Math.round(img.naturalWidth*scale),h=Math.round(img.naturalHeight*scale);
-  const c=document.createElement('canvas'); c.width=w;c.height=h; const x=c.getContext('2d',{willReadFrequently:true}); x.drawImage(img,0,0,w,h); return c;
+
+function imagenACanvas(img) {
+
+  const limite = 2000;
+
+  const escala =
+    Math.min(
+      1,
+      limite /
+      Math.max(
+        img.naturalWidth,
+        img.naturalHeight
+      )
+    );
+
+  const ancho =
+    Math.round(
+      img.naturalWidth * escala
+    );
+
+  const alto =
+    Math.round(
+      img.naturalHeight * escala
+    );
+
+  const canvas =
+    document.createElement('canvas');
+
+  canvas.width = ancho;
+  canvas.height = alto;
+
+  const ctx =
+    canvas.getContext(
+      '2d',
+      { willReadFrequently: true }
+    );
+
+  ctx.drawImage(
+    img,
+    0,
+    0,
+    ancho,
+    alto
+  );
+
+  return canvas;
 }
-function localizarPantalla(canvas){
-  const ctx=canvas.getContext('2d',{willReadFrequently:true}), w=canvas.width,h=canvas.height, data=ctx.getImageData(0,0,w,h).data;
-  const bright=(x,y)=>{const i=(y*w+x)*4; return (data[i]+data[i+1]+data[i+2])/3>140;};
-  const stepX=Math.max(1,Math.floor(w/700)), stepY=Math.max(1,Math.floor(h/700)); const ys=[];
-  for(let y=0;y<h;y+=stepY){let n=0,t=0;for(let x=0;x<w;x+=stepX){t++;if(bright(x,y))n++;} if(n/t>.30)ys.push(y);}
-  if(!ys.length) return canvas;
-  let y0=Math.max(0,Math.min(...ys)-Math.round(h*.01)), y1=Math.min(h-1,Math.max(...ys)+Math.round(h*.01)); const xs=[];
-  for(let x=0;x<w;x+=stepX){let n=0,t=0;for(let y=y0;y<=y1;y+=stepY){t++;if(bright(x,y))n++;} if(t&&n/t>.45)xs.push(x);}
-  if(!xs.length) return canvas;
-  let x0=Math.max(0,Math.min(...xs)-Math.round(w*.015)), x1=Math.min(w-1,Math.max(...xs)+Math.round(w*.015));
-  if(x1-x0<w*.35 || y1-y0<h*.35) return canvas;
-  const out=document.createElement('canvas'); out.width=x1-x0+1;out.height=y1-y0+1;out.getContext('2d').drawImage(canvas,x0,y0,out.width,out.height,0,0,out.width,out.height); return out;
-}
-function numero(texto){ const limpio=String(texto).toUpperCase().replace(/O/g,'0').replace(/,/g,'.'); const m=limpio.match(/\d+(?:\.\d+)?/g); if(!m)return ''; return /[A-Z]/.test(limpio)&&m.length>1?m[m.length-1]:m[0]; }
-function formato(valor,dec){ if(!valor)return ''; let v=String(valor); if(!v.includes('.')&&dec&&v.length>dec)v=v.slice(0,-dec)+'.'+v.slice(-dec); const n=Number(v); if(!Number.isFinite(n))return ''; return dec?n.toFixed(dec):String(Math.round(n)); }
-function normalizarWords(data,w,h){
-  const words=[];
-  for(const block of (data.blocks||[])) for(const paragraph of (block.paragraphs||[])) for(const line of (paragraph.lines||[])) for(const x of (line.words||[])) {
-    if(x.text && x.bbox) words.push({texto:x.text.toUpperCase().replace(/,/g,'.'),confianza:(x.confidence||0)/100,x:((x.bbox.x0+x.bbox.x1)/2)/w,y:((x.bbox.y0+x.bbox.y1)/2)/h});
+
+
+/* =========================================================
+   LOCALIZAR PANTALLA
+========================================================= */
+
+function mayorSecuencia(valores) {
+
+  if (!valores.length) {
+    return null;
   }
-  return words;
+
+  let inicioMejor = valores[0];
+  let finMejor = valores[0];
+
+  let inicioActual = valores[0];
+  let anterior = valores[0];
+
+  for (
+    let i = 1;
+    i < valores.length;
+    i++
+  ) {
+
+    const actual = valores[i];
+
+    if (
+      actual - anterior >
+      Math.max(4, anterior * 0.015)
+    ) {
+
+      if (
+        anterior - inicioActual >
+        finMejor - inicioMejor
+      ) {
+
+        inicioMejor = inicioActual;
+        finMejor = anterior;
+      }
+
+      inicioActual = actual;
+    }
+
+    anterior = actual;
+  }
+
+  if (
+    anterior - inicioActual >
+    finMejor - inicioMejor
+  ) {
+
+    inicioMejor = inicioActual;
+    finMejor = anterior;
+  }
+
+  return [
+    inicioMejor,
+    finMejor
+  ];
 }
-function resultadoFila(tokens,y,dec,param){
-  for(const t of tokens){ const letras=t.texto.replace(/[^A-Z%]/g,''); if(Math.abs(t.y-y)<.060 && letras.includes(param.replace('%',''))){const nums=t.texto.match(/\d+(?:\.\d+)?/g);if(nums?.length)return formato(nums[nums.length-1],dec);} }
-  const cand=tokens.filter(t=>Math.abs(t.y-y)<.035&&t.x>.18&&t.x<.62&&numero(t.texto)).sort((a,b)=>a.x-b.x); const simples=cand.map(t=>numero(t.texto));
-  if(dec&&simples.length>=2&&simples.slice(0,2).every(s=>!s.includes('.')&&s.length<=2)){const comb=simples[0]+'.'+simples[1];if(Number(comb)<1000)return formato(comb,dec);} return cand.length?formato(numero(cand[0].texto),dec):'';
+
+
+function localizarPantalla(canvas) {
+
+  const ctx =
+    canvas.getContext(
+      '2d',
+      { willReadFrequently: true }
+    );
+
+  const ancho = canvas.width;
+  const alto = canvas.height;
+
+  const imagen =
+    ctx.getImageData(
+      0,
+      0,
+      ancho,
+      alto
+    );
+
+  const data = imagen.data;
+
+
+  function luminosidad(x, y) {
+
+    const i =
+      (y * ancho + x) * 4;
+
+    return (
+      data[i] * 0.299 +
+      data[i + 1] * 0.587 +
+      data[i + 2] * 0.114
+    );
+  }
+
+
+  const pasoX =
+    Math.max(
+      2,
+      Math.floor(ancho / 600)
+    );
+
+  const pasoY =
+    Math.max(
+      2,
+      Math.floor(alto / 700)
+    );
+
+
+  /*
+   * Ignoramos la parte superior de la fotografía
+   * para no confundir etiquetas, cajas o reflejos
+   * del equipo con la pantalla.
+   */
+
+  const inicioY =
+    Math.floor(alto * 0.15);
+
+  const finY =
+    Math.floor(alto * 0.95);
+
+
+  const filas = [];
+
+
+  for (
+    let y = inicioY;
+    y < finY;
+    y += pasoY
+  ) {
+
+    let claros = 0;
+    let total = 0;
+
+    for (
+      let x =
+        Math.floor(ancho * 0.05);
+      x <
+        Math.floor(ancho * 0.95);
+      x += pasoX
+    ) {
+
+      total++;
+
+      if (
+        luminosidad(x, y) >
+        145
+      ) {
+
+        claros++;
+      }
+    }
+
+    const proporcion =
+      claros / total;
+
+    if (proporcion > 0.34) {
+      filas.push(y);
+    }
+  }
+
+
+  const rangoY =
+    mayorSecuencia(filas);
+
+
+  if (!rangoY) {
+
+    throw new Error(
+      'No pude localizar claramente la pantalla del analizador.'
+    );
+  }
+
+
+  let y0 =
+    Math.max(
+      0,
+      rangoY[0] -
+      Math.round(alto * 0.015)
+    );
+
+  let y1 =
+    Math.min(
+      alto,
+      rangoY[1] +
+      Math.round(alto * 0.015)
+    );
+
+
+  const columnas = [];
+
+
+  for (
+    let x =
+      Math.floor(ancho * 0.05);
+    x <
+      Math.floor(ancho * 0.95);
+    x += pasoX
+  ) {
+
+    let claros = 0;
+    let total = 0;
+
+    for (
+      let y = y0;
+      y < y1;
+      y += pasoY
+    ) {
+
+      total++;
+
+      if (
+        luminosidad(x, y) >
+        145
+      ) {
+
+        claros++;
+      }
+    }
+
+
+    if (
+      total &&
+      claros / total > 0.40
+    ) {
+
+      columnas.push(x);
+    }
+  }
+
+
+  const rangoX =
+    mayorSecuencia(columnas);
+
+
+  if (!rangoX) {
+
+    throw new Error(
+      'No pude determinar los bordes laterales de la pantalla.'
+    );
+  }
+
+
+  let x0 =
+    Math.max(
+      0,
+      rangoX[0] -
+      Math.round(ancho * 0.015)
+    );
+
+  let x1 =
+    Math.min(
+      ancho,
+      rangoX[1] +
+      Math.round(ancho * 0.015)
+    );
+
+
+  const anchoPantalla =
+    x1 - x0;
+
+  const altoPantalla =
+    y1 - y0;
+
+
+  if (
+    anchoPantalla <
+      ancho * 0.40 ||
+    altoPantalla <
+      alto * 0.40
+  ) {
+
+    throw new Error(
+      'La pantalla ocupa muy poco espacio en la fotografía. Acerque un poco más el iPhone.'
+    );
+  }
+
+
+  const salida =
+    document.createElement('canvas');
+
+  salida.width = anchoPantalla;
+  salida.height = altoPantalla;
+
+
+  salida
+    .getContext('2d')
+    .drawImage(
+      canvas,
+      x0,
+      y0,
+      anchoPantalla,
+      altoPantalla,
+      0,
+      0,
+      anchoPantalla,
+      altoPantalla
+    );
+
+
+  return salida;
 }
-function identidades(tokens){
-  let propietario='',paciente=''; const ord=[...tokens].sort((a,b)=>a.y-b.y||a.x-b.x);
-  ord.forEach((t,i)=>{const tx=t.texto;
-    if(/^ID\s*:/.test(tx)&&!tx.startsWith('ID2')){propietario=tx.replace(/^ID\s*:\s*/,'').trim();if(!propietario&&ord[i+1]&&Math.abs(ord[i+1].y-t.y)<.03)propietario=ord[i+1].texto;}
-    if(tx.startsWith('ID2')){paciente=tx.replace(/^ID2\s*:\s*/,'').trim();if(!paciente){const c=ord.filter(x=>Math.abs(x.y-t.y)<.060&&x.x>t.x&&!x.texto.includes('ID')&&!['DOG','CAT','OT'].includes(x.texto));if(c.length)paciente=c[0].texto;}}
+
+
+/* =========================================================
+   RECORTES FIJOS
+========================================================= */
+
+function recortar(
+  canvas,
+  x,
+  y,
+  ancho,
+  alto
+) {
+
+  const sx =
+    Math.round(
+      canvas.width * x
+    );
+
+  const sy =
+    Math.round(
+      canvas.height * y
+    );
+
+  const sw =
+    Math.round(
+      canvas.width * ancho
+    );
+
+  const sh =
+    Math.round(
+      canvas.height * alto
+    );
+
+
+  const salida =
+    document.createElement('canvas');
+
+
+  /*
+   * Ampliamos cada zona.
+   * Tesseract trabaja mejor con caracteres grandes.
+   */
+
+  const factor = 4;
+
+  salida.width = sw * factor;
+  salida.height = sh * factor;
+
+
+  const ctx =
+    salida.getContext(
+      '2d',
+      { willReadFrequently: true }
+    );
+
+
+  ctx.drawImage(
+    canvas,
+    sx,
+    sy,
+    sw,
+    sh,
+    0,
+    0,
+    salida.width,
+    salida.height
+  );
+
+
+  return salida;
+}
+
+
+function mejorarParaOCR(
+  canvas,
+  umbral = 155
+) {
+
+  const ctx =
+    canvas.getContext(
+      '2d',
+      { willReadFrequently: true }
+    );
+
+  const imagen =
+    ctx.getImageData(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+  const data =
+    imagen.data;
+
+
+  for (
+    let i = 0;
+    i < data.length;
+    i += 4
+  ) {
+
+    const gris =
+      data[i] * 0.299 +
+      data[i + 1] * 0.587 +
+      data[i + 2] * 0.114;
+
+
+    const valor =
+      gris > umbral
+        ? 255
+        : 0;
+
+
+    data[i] = valor;
+    data[i + 1] = valor;
+    data[i + 2] = valor;
+  }
+
+
+  ctx.putImageData(
+    imagen,
+    0,
+    0
+  );
+
+
+  return canvas;
+}
+
+
+/* =========================================================
+   OCR INDIVIDUAL
+========================================================= */
+
+async function reconocerZona(
+  worker,
+  canvas,
+  whitelist
+) {
+
+  await worker.setParameters({
+
+    tessedit_pageseg_mode: '7',
+
+    tessedit_char_whitelist:
+      whitelist,
+
+    preserve_interword_spaces:
+      '1'
   });
-  const limpiar=x=>String(x).toUpperCase().replace(/\b(?:DOG|CAT|OT|3P)\b.*$/,'').replace(/[^A-ZÁÉÍÓÚÑ ]/g,' ').replace(/\s+/g,' ').trim(); return [limpiar(propietario),limpiar(paciente)];
-}
-async function analizar(file){
-  if(!window.Tesseract) throw new Error('No se pudo cargar el lector OCR. Revise la conexión a Internet y vuelva a intentar.');
-  const img=await cargarImagen(file); if(img.naturalWidth<500||img.naturalHeight<500)throw new Error('La fotografía es demasiado pequeña; acerque la cámara.');
-  const canvas=localizarPantalla(prepararCanvas(img));
-  const worker=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text')setEstado(`Leyendo fotografía… ${Math.round((m.progress||0)*100)}%`);}});
-  let result;
-  try { result=await worker.recognize(canvas,{}, {blocks:true}); }
-  finally { await worker.terminate(); }
-  const tokens=normalizarWords(result.data,canvas.width,canvas.height);
-  if(!tokens.length) throw new Error('El OCR no pudo ubicar texto en la pantalla. Intente una foto más recta y cercana.');
-  const todo=tokens.map(t=>t.texto).join(' ');
-  let tipo=/CAT|GRAN|2\/3/.test(todo)?'gato':/DOG|NEUT|2\/4/.test(todo)?'perro':''; const avisos=[]; if(!tipo){tipo='perro';avisos.push('Confirme la especie: DOG/CAT no se leyó con seguridad.');}
-  const [propietario,paciente]=identidades(tokens); const filas=[];
-  for(const param of filasPorTipo(tipo)){const [y,min,max,dec]=cfg(tipo,param);const res=resultadoFila(tokens,y,dec,param);let bandera='';const n=Number(res);if(Number.isFinite(n))bandera=n<Number(min)?'L':n>Number(max)?'H':'';else avisos.push(`No se pudo leer ${param}; complételo manualmente.`);filas.push({parametro:param,resultado:res,minimo:min,maximo:max,bandera});}
-  avisos.push('Revise cada valor contra la fotografía antes de generar el reporte.'); return {propietario,paciente,especie:tipo,filas,advertencias:[...new Set(avisos)]};
+
+
+  const resultado =
+    await worker.recognize(canvas);
+
+
+  return {
+
+    texto:
+      String(
+        resultado.data.text || ''
+      ).trim(),
+
+    confianza:
+      Number(
+        resultado.data.confidence || 0
+      )
+  };
 }
 
-imagen.addEventListener('change',()=>{const f=imagen.files?.[0]; leer.disabled=!f; if(!f){previa.hidden=true;return;} previa.src=URL.createObjectURL(f);previa.hidden=false;estado.hidden=true;});
-leer.addEventListener('click',async()=>{const f=imagen.files?.[0];if(!f)return; leer.disabled=true;leer.textContent='Leyendo fotografía…';setEstado('Preparando OCR en este dispositivo…');try{const d=await analizar(f);$('#propietario').value=titulo(d.propietario);$('#paciente').value=titulo(d.paciente);especieSelect.value=d.especie;crearFilas(d.especie,d.filas);form.hidden=false;setEstado(d.advertencias.join(' '),d.advertencias.length?'warning':'success');form.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){setEstado(e.message||'No se pudo procesar la fotografía.','error');}finally{leer.disabled=false;leer.textContent='Leer resultados';}});
-especieSelect.addEventListener('change',()=>crearFilas(especieSelect.value||'perro'));
-$('#volver-leer').addEventListener('click',()=>{form.hidden=true;imagen.click();});
 
-const UNIDADES={WBC:'10³/µL',LYM:'10³/µL',MONO:'10³/µL',NEUT:'10³/µL',EOS:'10³/µL',GRAN:'10³/µL',HGB:'g/dL',HCT:'%',RBC:'10⁶/µL',MCV:'fL',MCHC:'g/dL','RDW%':'%',PLT:'10³/µL'};
-function estadoValor(resultado,min,max,bandera){if(bandera==='H')return 'Alto';if(bandera==='L')return 'Bajo';const n=Number(resultado),lo=Number(min),hi=Number(max);if(![n,lo,hi].every(Number.isFinite))return '';return n<lo?'Bajo':n>hi?'Alto':'Dentro de referencia';}
-form.addEventListener('submit',(e)=>{e.preventDefault();const fd=new FormData(form);const tipo=fd.get('especie')||'perro';const filas=filasPorTipo(tipo).map(param=>{const k=clave(param),resultado=String(fd.get(`${k}_resultado`)||'').trim(),minimo=String(fd.get(`${k}_minimo`)||'').trim(),maximo=String(fd.get(`${k}_maximo`)||'').trim(),bandera=String(fd.get(`${k}_bandera`)||'');return {parametro:param,resultado,unidad:UNIDADES[param]||'',minimo,maximo,referencia:minimo&&maximo?`${minimo} - ${maximo}`:'',bandera,estado:estadoValor(resultado,minimo,maximo,bandera)};});
-  const datos={propietario:titulo(fd.get('propietario')),paciente:titulo(fd.get('paciente')),especie:tipo,edad:String(fd.get('edad')||'').trim(),expediente:String(fd.get('expediente')||'').trim(),veterinario:String(fd.get('veterinario')||'Gabriela Quesada Víquez').trim(),fecha:String(fd.get('fecha')||hoyLocal()),reporte:String(fd.get('numero_reporte')||numeroReporte()),observaciones:String(fd.get('observaciones')||'').trim().slice(0,800),filas}; sessionStorage.setItem('vetlab_ultimo_reporte',JSON.stringify(datos)); location.href='./reporte.html';
-});
+function limpiarNumero(
+  texto,
+  decimales
+) {
+
+  let limpio =
+    String(texto || '')
+      .trim()
+      .replace(/,/g, '.')
+      .replace(/O/gi, '0')
+      .replace(/[^\d.]/g, '');
+
+
+  if (!limpio) {
+    return '';
+  }
+
+
+  /*
+   * Si hay varios puntos conservamos solo uno.
+   */
+
+  const partes =
+    limpio.split('.');
+
+
+  if (partes.length > 2) {
+
+    limpio =
+      partes.shift() +
+      '.' +
+      partes.join('');
+  }
+
+
+  /*
+   * Si el Exigo muestra 12.1 y OCR devuelve 121,
+   * sabemos por la plantilla que debe tener
+   * un decimal.
+   */
+
+  if (
+    !limpio.includes('.') &&
+    decimales > 0
+  ) {
+
+    const soloDigitos =
+      limpio.replace(/\D/g, '');
+
+
+    if (
+      soloDigitos.length >
+      decimales
+    ) {
+
+      limpio =
+        soloDigitos.slice(
+          0,
+          -decimales
+        ) +
+        '.' +
+        soloDigitos.slice(
+          -decimales
+        );
+    }
+  }
+
+
+  const numero =
+    Number(limpio);
+
+
+  if (
+    !Number.isFinite(numero)
+  ) {
+
+    return '';
+  }
+
+
+  if (decimales === 0) {
+    return String(
+      Math.round(numero)
+    );
+  }
+
+
+  return numero.toFixed(decimales);
+}
+
+
+/* =========================================================
+   IDENTIDAD / ESPECIE
+========================================================= */
+
+function limpiarTextoNombre(texto) {
+
+  return String(texto || '')
+    .toUpperCase()
+
+    .replace(/ID2?\s*:?\s*/g, ' ')
+
+    .replace(
+      /\bDOG\b|\bCAT\b|\b3P\b|\bOT\b/g,
+      ' '
+    )
+
+    .replace(
+      /[^A-ZÁÉÍÓÚÜÑ0-9 -]/g,
+      ' '
+    )
+
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+
+async function leerIdentidad(
+  worker,
+  pantalla
+) {
+
+  /*
+   * ID = propietario
+   */
+
+  const zonaPropietario =
+    mejorarParaOCR(
+      recortar(
+        pantalla,
+        0.00,
+        0.008,
+        0.74,
+        0.050
+      ),
+      160
+    );
+
+
+  const propietarioOCR =
+    await reconocerZona(
+      worker,
+      zonaPropietario,
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ÁÉÍÓÚÜÑ :-'
+    );
+
+
+  /*
+   * ID2 = paciente
+   */
+
+  const zonaPaciente =
+    mejorarParaOCR(
+      recortar(
+        pantalla,
+        0.00,
+        0.052,
+        0.76,
+        0.050
+      ),
+      160
+    );
+
+
+  const pacienteOCR =
+    await reconocerZona(
+      worker,
+      zonaPaciente,
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ÁÉÍÓÚÜÑ :-'
+    );
+
+
+  return {
+
+    propietario:
+      normalizarNombre(
+        limpiarTextoNombre(
+          propietarioOCR.texto
+        )
+      ),
+
+    paciente:
+      normalizarNombre(
+        limpiarTextoNombre(
+          pacienteOCR.texto
+        )
+      ),
+
+    confianzaPropietario:
+      propietarioOCR.confianza,
+
+    confianzaPaciente:
+      pacienteOCR.confianza
+  };
+}
+
+
+async function detectarEspecie(
+  worker,
+  pantalla
+) {
+
+  /*
+   * Primero intentamos directamente la zona
+   * donde aparece DOG / CAT.
+   */
+
+  const zona =
+    mejorarParaOCR(
+      recortar(
+        pantalla,
+        0.76,
+        0.045,
+        0.23,
+        0.055
+      ),
+      155
+    );
+
+
+  const lectura =
+    await reconocerZona(
+      worker,
+      zona,
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    );
+
+
+  const texto =
+    lectura.texto
+      .toUpperCase();
+
+
+  if (
+    texto.includes('CAT')
+  ) {
+
+    return {
+      especie: 'gato',
+      confianza: lectura.confianza
+    };
+  }
+
+
+  if (
+    texto.includes('DOG')
+  ) {
+
+    return {
+      especie: 'perro',
+      confianza: lectura.confianza
+    };
+  }
+
+
+  /*
+   * Segunda comprobación:
+   * buscamos GRAN vs NEUT/EOS.
+   */
+
+  const zonaDiferencial =
+    mejorarParaOCR(
+      recortar(
+        pantalla,
+        0.00,
+        0.14,
+        0.26,
+        0.18
+      ),
+      155
+    );
+
+
+  const diferencial =
+    await reconocerZona(
+      worker,
+      zonaDiferencial,
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    );
+
+
+  const textoDif =
+    diferencial.texto.toUpperCase();
+
+
+  if (
+    textoDif.includes('GRAN')
+  ) {
+
+    return {
+      especie: 'gato',
+      confianza:
+        diferencial.confianza
+    };
+  }
+
+
+  if (
+    textoDif.includes('NEUT') ||
+    textoDif.includes('EOS')
+  ) {
+
+    return {
+      especie: 'perro',
+      confianza:
+        diferencial.confianza
+    };
+  }
+
+
+  return {
+    especie: '',
+    confianza: 0
+  };
+}
+
+
+/* =========================================================
+   LEER RESULTADOS POR COORDENADAS
+========================================================= */
+
+async function leerParametros(
+  worker,
+  pantalla,
+  especie
+) {
+
+  const parametros =
+    CONFIG[especie].parametros;
+
+
+  const resultados = [];
+
+
+  for (
+    let i = 0;
+    i < parametros.length;
+    i++
+  ) {
+
+    const parametro =
+      parametros[i];
+
+
+    mostrarEstado(
+      `Leyendo ${parametro.nombre}... ${i + 1}/${parametros.length}`
+    );
+
+
+    /*
+     * IMPORTANTE:
+     *
+     * Ya NO leemos toda la fila.
+     *
+     * Solo leemos la columna numérica
+     * donde el Exigo muestra el resultado.
+     */
+
+    const zona =
+      recortar(
+        pantalla,
+
+        0.235,
+
+        parametro.y - 0.021,
+
+        0.245,
+
+        0.043
+      );
+
+
+    mejorarParaOCR(
+      zona,
+      155
+    );
+
+
+    const lectura =
+      await reconocerZona(
+        worker,
+        zona,
+        '0123456789.'
+      );
+
+
+    const resultado =
+      limpiarNumero(
+        lectura.texto,
+        parametro.decimales
+      );
+
+
+    resultados.push({
+
+      ...parametro,
+
+      resultado,
+
+      confianza:
+        lectura.confianza
+
+    });
+  }
+
+
+  return resultados;
+}
+
+
+/* =========================================================
+   ESTADO CLÍNICO
+========================================================= */
+
+function calcularEstado(
+  resultado,
+  minimo,
+  maximo
+) {
+
+  if (
+    !numeroValido(resultado)
+  ) {
+
+    return 'REVISAR';
+  }
+
+
+  const valor =
+    Number(resultado);
+
+
+  if (
+    valor < Number(minimo)
+  ) {
+
+    return 'BAJO';
+  }
+
+
+  if (
+    valor > Number(maximo)
+  ) {
+
+    return 'ALTO';
+  }
+
+
+  return 'NORMAL';
+}
+
+
+/* =========================================================
+   TABLA DE CONFIRMACIÓN
+========================================================= */
+
+function crearTablaResultados(
+  especie,
+  resultados
+) {
+
+  tbody.innerHTML = '';
+
+
+  const mapa =
+    Object.fromEntries(
+      resultados.map(
+        resultado => [
+          resultado.id,
+          resultado
+        ]
+      )
+    );
+
+
+  CONFIG[especie]
+    .parametros
+    .forEach(parametro => {
+
+
+      const dato =
+        mapa[parametro.id] || {
+          ...parametro,
+          resultado: '',
+          confianza: 0
+        };
+
+
+      const estado =
+        calcularEstado(
+          dato.resultado,
+          parametro.minimo,
+          parametro.maximo
+        );
+
+
+      const tr =
+        document.createElement('tr');
+
+
+      tr.dataset.parametro =
+        parametro.id;
+
+
+      if (
+        dato.confianza < 60 ||
+        !dato.resultado
+      ) {
+
+        tr.classList.add(
+          'needs-review'
+        );
+      }
+
+
+      tr.innerHTML = `
+
+        <th>
+          ${escaparHTML(parametro.nombre)}
+        </th>
+
+
+        <td>
+
+          <input
+            type="text"
+            inputmode="decimal"
+            class="resultado-input"
+            data-id="${escaparHTML(parametro.id)}"
+            value="${escaparHTML(dato.resultado)}"
+            autocomplete="off"
+            required
+          >
+
+          ${
+            dato.confianza > 0
+              ? `
+                <small class="ocr-confidence">
+                  OCR ${Math.round(dato.confianza)}%
+                </small>
+              `
+              : ''
+          }
+
+        </td>
+
+
+        <td>
+          ${escaparHTML(parametro.unidad)}
+        </td>
+
+
+        <td>
+          ${escaparHTML(
+            `${formatearReferencia(
+              parametro.minimo,
+              parametro.decimales
+            )} – ${formatearReferencia(
+              parametro.maximo,
+              parametro.decimales
+            )}`
+          )}
+        </td>
+
+
+        <td>
+
+          <span
+            class="result-state ${estado.toLowerCase()}"
+            data-estado="${escaparHTML(parametro.id)}">
+
+            ${textoEstado(estado)}
+
+          </span>
+
+        </td>
+      `;
+
+
+      tbody.appendChild(tr);
+    });
+
+
+  document
+    .querySelectorAll(
+      '.resultado-input'
+    )
+    .forEach(input => {
+
+      input.addEventListener(
+        'input',
+        () => {
+
+          actualizarFila(
+            input.dataset.id
+          );
+
+          actualizarControlCalidad();
+
+        }
+      );
+
+    });
+}
+
+
+function formatearReferencia(
+  valor,
+  decimales
+) {
+
+  const numero =
+    Number(valor);
+
+  if (
+    !Number.isFinite(numero)
+  ) {
+
+    return String(valor);
+  }
+
+  if (decimales === 0) {
+    return String(
+      Math.round(numero)
+    );
+  }
+
+  return numero.toFixed(decimales);
+}
+
+
+function textoEstado(estado) {
+
+  switch (estado) {
+
+    case 'ALTO':
+      return '↑ Alto';
+
+    case 'BAJO':
+      return '↓ Bajo';
+
+    case 'NORMAL':
+      return 'Normal';
+
+    default:
+      return 'Revisar';
+  }
+}
+
+
+function obtenerParametro(id) {
+
+  return CONFIG[especieActual]
+    ?.parametros
+    .find(
+      parametro =>
+        parametro.id === id
+    );
+}
+
+
+function actualizarFila(id) {
+
+  const parametro =
+    obtenerParametro(id);
+
+  if (!parametro) {
+    return;
+  }
+
+
+  const input =
+    document.querySelector(
+      `.resultado-input[data-id="${id}"]`
+    );
+
+
+  const badge =
+    document.querySelector(
+      `[data-estado="${id}"]`
+    );
+
+
+  if (!input || !badge) {
+    return;
+  }
+
+
+  const estado =
+    calcularEstado(
+      input.value,
+      parametro.minimo,
+      parametro.maximo
+    );
+
+
+  badge.className =
+    `result-state ${estado.toLowerCase()}`;
+
+  badge.textContent =
+    textoEstado(estado);
+
+
+  const fila =
+    input.closest('tr');
+
+
+  if (input.value.trim()) {
+
+    fila.classList.remove(
+      'needs-review'
+    );
+
+  } else {
+
+    fila.classList.add(
+      'needs-review'
+    );
+  }
+}
+
+
+/* =========================================================
+   VALIDACIÓN MATEMÁTICA
+========================================================= */
+
+function obtenerValor(id) {
+
+  const input =
+    document.querySelector(
+      `.resultado-input[data-id="${id}"]`
+    );
+
+
+  if (!input) {
+    return NaN;
+  }
+
+
+  return Number(
+    input.value
+  );
+}
+
+
+function revisarCoherencia() {
+
+  const avisos = [];
+
+
+  const WBC =
+    obtenerValor('WBC');
+
+  const LYM =
+    obtenerValor('LYM');
+
+  const MONO =
+    obtenerValor('MONO');
+
+
+  /*
+   * Comprobación diferencial leucocitario
+   */
+
+  if (
+    especieActual === 'perro'
+  ) {
+
+    const NEUT =
+      obtenerValor('NEUT');
+
+    const EOS =
+      obtenerValor('EOS');
+
+
+    if (
+      [
+        WBC,
+        LYM,
+        MONO,
+        NEUT,
+        EOS
+      ].every(Number.isFinite)
+    ) {
+
+      const suma =
+        LYM +
+        MONO +
+        NEUT +
+        EOS;
+
+
+      if (
+        diferenciaRelativa(
+          WBC,
+          suma
+        ) > 0.06
+      ) {
+
+        avisos.push({
+          tipo: 'warning',
+          texto:
+            `Revisar diferencial: LYM + MONO + NEUT + EOS = ${suma.toFixed(1)}, pero WBC = ${WBC.toFixed(1)}.`
+        });
+      }
+    }
+
+  } else if (
+    especieActual === 'gato'
+  ) {
+
+    const GRAN =
+      obtenerValor('GRAN');
+
+
+    if (
+      [
+        WBC,
+        LYM,
+        MONO,
+        GRAN
+      ].every(Number.isFinite)
+    ) {
+
+      const suma =
+        LYM +
+        MONO +
+        GRAN;
+
+
+      if (
+        diferenciaRelativa(
+          WBC,
+          suma
+        ) > 0.06
+      ) {
+
+        avisos.push({
+          tipo: 'warning',
+          texto:
+            `Revisar diferencial: LYM + MONO + GRAN = ${suma.toFixed(1)}, pero WBC = ${WBC.toFixed(1)}.`
+        });
+      }
+    }
+  }
+
+
+  /*
+   * HCT ≈ RBC × MCV / 10
+   */
+
+  const RBC =
+    obtenerValor('RBC');
+
+  const MCV =
+    obtenerValor('MCV');
+
+  const HCT =
+    obtenerValor('HCT');
+
+
+  if (
+    [
+      RBC,
+      MCV,
+      HCT
+    ].every(Number.isFinite)
+  ) {
+
+    const hctCalculado =
+      RBC * MCV / 10;
+
+
+    if (
+      diferenciaRelativa(
+        HCT,
+        hctCalculado
+      ) > 0.04
+    ) {
+
+      avisos.push({
+        tipo: 'warning',
+        texto:
+          `Revisar RBC, MCV o HCT. Por cálculo se esperaría HCT ≈ ${hctCalculado.toFixed(1)}%, pero se leyó ${HCT.toFixed(1)}%.`
+      });
+    }
+  }
+
+
+  /*
+   * MCHC ≈ HGB / HCT × 100
+   */
+
+  const HGB =
+    obtenerValor('HGB');
+
+  const MCHC =
+    obtenerValor('MCHC');
+
+
+  if (
+    [
+      HGB,
+      HCT,
+      MCHC
+    ].every(Number.isFinite) &&
+    HCT !== 0
+  ) {
+
+    const mchcCalculado =
+      HGB / HCT * 100;
+
+
+    if (
+      diferenciaRelativa(
+        MCHC,
+        mchcCalculado
+      ) > 0.05
+    ) {
+
+      avisos.push({
+        tipo: 'warning',
+        texto:
+          `Revisar HGB, HCT o MCHC. Por cálculo se esperaría MCHC ≈ ${mchcCalculado.toFixed(1)} g/dL, pero se leyó ${MCHC.toFixed(1)} g/dL.`
+      });
+    }
+  }
+
+
+  /*
+   * Campos vacíos
+   */
+
+  document
+    .querySelectorAll(
+      '.resultado-input'
+    )
+    .forEach(input => {
+
+      if (
+        !input.value.trim()
+      ) {
+
+        avisos.push({
+          tipo: 'error',
+          texto:
+            `Falta confirmar ${input.dataset.id}.`
+        });
+      }
+
+    });
+
+
+  return avisos;
+}
+
+
+function actualizarControlCalidad() {
+
+  const avisos =
+    revisarCoherencia();
+
+
+  avisosCalidad.innerHTML = '';
+
+
+  if (!avisos.length) {
+
+    calidadGeneral.className =
+      'quality-badge good';
+
+    calidadGeneral.textContent =
+      'Lectura coherente';
+
+
+    avisosCalidad.innerHTML = `
+      <div class="quality-message good">
+        ✓ Las principales comprobaciones matemáticas son coherentes.
+        Confirme visualmente los valores contra la fotografía antes de continuar.
+      </div>
+    `;
+
+    return;
+  }
+
+
+  calidadGeneral.className =
+    'quality-badge warning';
+
+  calidadGeneral.textContent =
+    `${avisos.length} por revisar`;
+
+
+  avisos.forEach(aviso => {
+
+    const div =
+      document.createElement('div');
+
+    div.className =
+      `quality-message ${aviso.tipo}`;
+
+    div.textContent =
+      aviso.texto;
+
+    avisosCalidad.appendChild(
+      div
+    );
+  });
+}
+
+
+/* =========================================================
+   ANÁLISIS COMPLETO
+========================================================= */
+
+async function analizarFotografia(
+  file
+) {
+
+  if (
+    !window.Tesseract
+  ) {
+
+    throw new Error(
+      'No se pudo cargar Tesseract. Compruebe la conexión a Internet.'
+    );
+  }
+
+
+  mostrarEstado(
+    'Preparando fotografía...'
+  );
+
+
+  const img =
+    await cargarImagen(file);
+
+
+  if (
+    img.naturalWidth < 500 ||
+    img.naturalHeight < 500
+  ) {
+
+    throw new Error(
+      'La fotografía tiene muy poca resolución.'
+    );
+  }
+
+
+  const canvasOriginal =
+    imagenACanvas(img);
+
+
+  mostrarEstado(
+    'Localizando pantalla del Exigo...'
+  );
+
+
+  const pantalla =
+    localizarPantalla(
+      canvasOriginal
+    );
+
+
+  ultimaPantalla =
+    pantalla;
+
+
+  const worker =
+    await Tesseract.createWorker(
+      'eng',
+      1,
+      {
+        logger: mensaje => {
+
+          if (
+            mensaje.status ===
+            'recognizing text'
+          ) {
+
+            // Se evita llenar la pantalla
+            // con cada actualización interna.
+          }
+        }
+      }
+    );
+
+
+  try {
+
+    mostrarEstado(
+      'Detectando DOG / CAT...'
+    );
+
+
+    const deteccionEspecie =
+      await detectarEspecie(
+        worker,
+        pantalla
+      );
+
+
+    let especie =
+      deteccionEspecie.especie;
+
+
+    if (!especie) {
+
+      throw new Error(
+        'No pude identificar con seguridad DOG o CAT. Tome otra fotografía un poco más recta.'
+      );
+    }
+
+
+    especieActual =
+      especie;
+
+
+    mostrarEstado(
+      'Leyendo propietario y paciente...'
+    );
+
+
+    const identidad =
+      await leerIdentidad(
+        worker,
+        pantalla
+      );
+
+
+    const resultados =
+      await leerParametros(
+        worker,
+        pantalla,
+        especie
+      );
+
+
+    resultadosActuales =
+      resultados;
+
+
+    return {
+
+      especie,
+      identidad,
+      resultados
+    };
+
+  } finally {
+
+    await worker.terminate();
+  }
+}
+
+
+/* =========================================================
+   EVENTOS
+========================================================= */
+
+$('#fecha').value =
+  hoyLocal();
+
+$('#numero_reporte').value =
+  generarNumeroReporte();
+
+
+imagenInput.addEventListener(
+  'change',
+  () => {
+
+    const file =
+      imagenInput.files?.[0];
+
+
+    botonLeer.disabled =
+      !file;
+
+
+    if (!file) {
+
+      vistaPrevia.hidden =
+        true;
+
+      return;
+    }
+
+
+    vistaPrevia.src =
+      URL.createObjectURL(file);
+
+    vistaPrevia.hidden =
+      false;
+
+    estadoOCR.hidden =
+      true;
+
+    form.hidden =
+      true;
+  }
+);
+
+
+botonLeer.addEventListener(
+  'click',
+  async () => {
+
+    const file =
+      imagenInput.files?.[0];
+
+
+    if (!file) {
+      return;
+    }
+
+
+    botonLeer.disabled =
+      true;
+
+    botonLeer.textContent =
+      'Leyendo fotografía...';
+
+
+    try {
+
+      const datos =
+        await analizarFotografia(
+          file
+        );
+
+
+      $('#propietario').value =
+        datos.identidad.propietario;
+
+
+      $('#paciente').value =
+        datos.identidad.paciente;
+
+
+      especieSelect.value =
+        datos.especie;
+
+
+      crearTablaResultados(
+        datos.especie,
+        datos.resultados
+      );
+
+
+      form.hidden =
+        false;
+
+
+      actualizarControlCalidad();
+
+
+      const nombresRevisar =
+        datos.identidad.confianzaPaciente < 65 ||
+        datos.identidad.confianzaPropietario < 60;
+
+
+      if (nombresRevisar) {
+
+        mostrarEstado(
+          'Lectura terminada. Revise especialmente los nombres y cualquier fila marcada para revisión.',
+          'warning'
+        );
+
+      } else {
+
+        mostrarEstado(
+          'Lectura terminada. Confirme todos los valores contra la fotografía.',
+          'success'
+        );
+      }
+
+
+      form.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      mostrarEstado(
+        error.message ||
+        'No se pudo procesar la fotografía.',
+        'error'
+      );
+
+    } finally {
+
+      botonLeer.disabled =
+        false;
+
+      botonLeer.textContent =
+        'Leer resultados';
+    }
+  }
+);
+
+
+$('#volver-leer')
+  .addEventListener(
+    'click',
+    () => {
+
+      form.hidden = true;
+
+      imagenInput.click();
+    }
+  );
+
+
+/*
+ * Si alguien cambia manualmente DOG/CAT,
+ * usamos la tabla correspondiente.
+ */
+
+especieSelect.addEventListener(
+  'change',
+  () => {
+
+    const nueva =
+      especieSelect.value;
+
+
+    if (
+      !nueva ||
+      nueva === especieActual
+    ) {
+
+      return;
+    }
+
+
+    especieActual =
+      nueva;
+
+
+    crearTablaResultados(
+      nueva,
+      []
+    );
+
+
+    actualizarControlCalidad();
+
+
+    mostrarEstado(
+      'La especie fue cambiada manualmente. Confirme todos los valores antes de generar el reporte.',
+      'warning'
+    );
+  }
+);
+
+
+/* =========================================================
+   GUARDAR REPORTE
+========================================================= */
+
+form.addEventListener(
+  'submit',
+  evento => {
+
+    evento.preventDefault();
+
+
+    const especie =
+      especieSelect.value;
+
+
+    if (!especie) {
+
+      mostrarEstado(
+        'Debe confirmar la especie.',
+        'error'
+      );
+
+      return;
+    }
+
+
+    const avisos =
+      revisarCoherencia();
+
+
+    const faltantes =
+      avisos.some(
+        aviso =>
+          aviso.tipo === 'error'
+      );
+
+
+    if (faltantes) {
+
+      mostrarEstado(
+        'Hay resultados sin completar. Revise la tabla antes de continuar.',
+        'error'
+      );
+
+      actualizarControlCalidad();
+
+      return;
+    }
+
+
+    const filas =
+      CONFIG[especie]
+        .parametros
+        .map(parametro => {
+
+
+          const input =
+            document.querySelector(
+              `.resultado-input[data-id="${parametro.id}"]`
+            );
+
+
+          const resultado =
+            String(
+              input?.value || ''
+            ).trim();
+
+
+          const estado =
+            calcularEstado(
+              resultado,
+              parametro.minimo,
+              parametro.maximo
+            );
+
+
+          return {
+
+            id:
+              parametro.id,
+
+            parametro:
+              parametro.nombre,
+
+            resultado,
+
+            unidad:
+              parametro.unidad,
+
+            minimo:
+              parametro.minimo,
+
+            maximo:
+              parametro.maximo,
+
+            referencia:
+              `${formatearReferencia(
+                parametro.minimo,
+                parametro.decimales
+              )} – ${formatearReferencia(
+                parametro.maximo,
+                parametro.decimales
+              )}`,
+
+            estado
+          };
+        });
+
+
+    const datos = {
+
+      propietario:
+        normalizarNombre(
+          $('#propietario').value
+        ),
+
+      paciente:
+        normalizarNombre(
+          $('#paciente').value
+        ),
+
+      especie,
+
+      edad:
+        $('#edad').value.trim(),
+
+      expediente:
+        $('#expediente').value.trim(),
+
+      veterinario:
+        normalizarNombre(
+          $('#veterinario').value
+        ),
+
+      fecha:
+        $('#fecha').value,
+
+      reporte:
+        $('#numero_reporte').value,
+
+      observaciones:
+        $('#observaciones')
+          .value
+          .trim()
+          .slice(0, 800),
+
+      equipo:
+        'Exigo H400',
+
+      controlCalidad:
+        avisos.map(
+          aviso => aviso.texto
+        ),
+
+      filas
+    };
+
+
+    sessionStorage.setItem(
+      'vetlab_ultimo_reporte',
+      JSON.stringify(datos)
+    );
+
+
+    location.href =
+      './reporte.html';
+  }
+);

@@ -225,3 +225,373 @@ body {
 
 [hidden]{display:none!important}.capture-card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:28px;margin-bottom:26px;display:grid;gap:18px}.capture-zone{min-height:180px;border:2px dashed #9bbbc5;border-radius:14px;background:#f5fafb;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:#14556b}.capture-zone input{position:absolute;opacity:0;pointer-events:none}.capture-zone span:last-of-type{color:#607d8b;font-size:13px}.camera-icon{font-size:34px}.image-preview{width:min(100%,480px);max-height:420px;object-fit:contain;margin:0 auto;border-radius:12px;background:#111}.status-box{padding:13px 15px;border-radius:9px;background:#e8f2f5;color:#14556b;line-height:1.45}.status-box.success{background:#ecfdf3;color:#067647}.status-box.warning{background:#fffaeb;color:#b54708}.status-box.error{background:#fef3f2;color:#b42318}.section-heading{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}.section-heading h3{margin-bottom:5px}.section-heading p{color:#6b7280;font-size:14px}.review-badge{background:#fff4e5;color:#9a4b00;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;white-space:nowrap}.table-wrap{overflow-x:auto}.edit-table,.report-table{width:100%;border-collapse:collapse}.edit-table th,.edit-table td,.report-table th,.report-table td{border:1px solid #d5e2e6;padding:9px;text-align:left}.edit-table thead th,.report-table thead th{background:#177997;color:#fff}.edit-table tbody th{color:#14556b}.edit-table input,.edit-table select{width:100%;min-width:90px;border:1px solid #cbd5db;border-radius:6px;padding:8px}.secondary-button{display:inline-block;border:1px solid #9ca3af;border-radius:9px;padding:12px 22px;color:#374151;background:#fff;text-decoration:none;font-weight:600;cursor:pointer}.form-actions,.download-actions{gap:12px;flex-wrap:wrap}.report-container{max-width:1000px}.report-sheet{background:#fff;padding:38px;border:1px solid #dbe4e7;box-shadow:0 10px 28px rgba(31,41,55,.07)}.report-brand{display:flex;justify-content:space-between;gap:25px;color:#14556b;margin-bottom:26px}.report-brand strong{display:block;font-size:22px}.report-brand span{display:block;text-transform:uppercase;font-size:13px;margin-top:4px}.report-info{display:grid;grid-template-columns:1fr 1fr;border:1px solid #d5e2e6;margin-bottom:24px}.report-info>div{display:flex;flex-direction:column;gap:5px;padding:14px}.report-info>div+div{border-left:1px solid #d5e2e6}.report-info b{color:#14556b;text-transform:uppercase;margin-bottom:4px}.report-table tbody tr:nth-child(even){background:#f6fafb}.report-table .abnormal{color:#b42318;font-weight:700}.report-notes{margin-top:18px;line-height:1.55}.download-actions{display:flex;justify-content:flex-end;margin:24px 0 45px}.download-actions .primary-button{text-decoration:none}@media(max-width:650px){.section-heading,.report-brand{flex-direction:column}.report-sheet{padding:20px 14px}.report-info{grid-template-columns:1fr}.report-info>div+div{border-left:0;border-top:1px solid #d5e2e6}}
 .logo-report{height:56px;max-width:150px;object-fit:contain;margin-bottom:8px}.report-brand-left{display:flex;align-items:center;gap:12px}.capture-progress{font-size:13px;color:#607d8b}.primary-button:disabled{opacity:.55;cursor:not-allowed}.noscript-warning{padding:14px;background:#fff4e5;color:#9a4b00}.report-table td,.report-table th{white-space:nowrap}.report-table td:first-child{font-weight:700}.report-brand-meta{text-align:right}@media(max-width:650px){.report-brand-meta{text-align:left}.report-table{font-size:12px}}
+
+/* =========================================================
+   VETLAB V2 - LECTOR EXIGO
+========================================================= */
+
+.quality-section {
+    border-left: 4px solid #177997;
+}
+
+.quality-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #eef2f4;
+    color: #52606d;
+    white-space: nowrap;
+}
+
+.quality-badge.good {
+    background: #ecfdf3;
+    color: #067647;
+}
+
+.quality-badge.warning {
+    background: #fff4e5;
+    color: #9a4b00;
+}
+
+.quality-message {
+    padding: 11px 13px;
+    margin-top: 8px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.quality-message.good {
+    background: #ecfdf3;
+    color: #067647;
+}
+
+.quality-message.warning {
+    background: #fffaeb;
+    color: #b54708;
+}
+
+.quality-message.error {
+    background: #fef3f2;
+    color: #b42318;
+}
+
+
+/* =========================================================
+   TABLA DE CONFIRMACIÓN
+========================================================= */
+
+.edit-table td,
+.edit-table th {
+    vertical-align: middle;
+}
+
+.edit-table .resultado-input {
+    width: 100%;
+    min-width: 90px;
+    font-size: 17px;
+    font-weight: 700;
+    text-align: right;
+}
+
+.edit-table tr.needs-review {
+    background: #fff8e8;
+}
+
+.ocr-confidence {
+    display: block;
+    margin-top: 4px;
+    color: #8a98a3;
+    font-size: 10px;
+}
+
+.result-state {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 70px;
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.result-state.normal {
+    color: #52606d;
+    background: #f1f4f6;
+}
+
+.result-state.alto,
+.result-state.bajo {
+    color: #b42318;
+    background: #fef3f2;
+}
+
+.result-state.revisar {
+    color: #b54708;
+    background: #fffaeb;
+}
+
+
+/* =========================================================
+   REPORTE PROFESIONAL
+========================================================= */
+
+.laboratory-report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 25px;
+    padding-bottom: 20px;
+    margin-bottom: 22px;
+    border-bottom: 2px solid #177997;
+}
+
+.laboratory-report-header .report-brand-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.laboratory-report-header strong {
+    display: block;
+    color: #14556b;
+    font-size: 20px;
+}
+
+.laboratory-report-header span {
+    display: block;
+    margin-top: 4px;
+    color: #607d8b;
+    font-size: 13px;
+}
+
+.report-number {
+    text-align: right;
+}
+
+.report-number > span {
+    color: #14556b;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.report-number small {
+    display: block;
+    margin-top: 6px;
+    color: #607d8b;
+}
+
+
+.patient-report-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid #d5e2e6;
+    border-radius: 9px;
+    overflow: hidden;
+    margin-bottom: 26px;
+}
+
+.patient-report-grid > div {
+    padding: 12px 14px;
+    border-right: 1px solid #d5e2e6;
+    border-bottom: 1px solid #d5e2e6;
+}
+
+.patient-report-grid > div:nth-child(3n) {
+    border-right: none;
+}
+
+.patient-report-grid > div:nth-last-child(-n+3) {
+    border-bottom: none;
+}
+
+.report-field-label {
+    display: block;
+    margin-bottom: 4px;
+    color: #607d8b;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.patient-report-grid strong {
+    font-size: 14px;
+}
+
+
+.report-section-title {
+    margin: 20px 0 10px;
+    color: #14556b;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+
+.professional-report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.professional-report-table th {
+    padding: 9px 10px;
+    color: white;
+    background: #177997;
+    border: 1px solid #177997;
+    text-align: left;
+}
+
+.professional-report-table td {
+    padding: 9px 10px;
+    border: 1px solid #d5e2e6;
+}
+
+.professional-report-table tbody tr:nth-child(even) {
+    background: #f8fbfc;
+}
+
+.professional-report-table .parameter-name {
+    color: #14556b;
+    font-weight: 800;
+}
+
+.professional-report-table .result-value {
+    font-weight: 800;
+    text-align: right;
+}
+
+.professional-report-table tr.high .result-value,
+.professional-report-table tr.low .result-value,
+.professional-report-table tr.high .state-cell,
+.professional-report-table tr.low .state-cell {
+    color: #b42318;
+    font-weight: 800;
+}
+
+
+.report-summary,
+.report-observations {
+    margin-top: 20px;
+    padding: 14px 16px;
+    border-radius: 8px;
+}
+
+.report-summary {
+    background: #f5fafb;
+    border: 1px solid #d5e2e6;
+}
+
+.report-observations {
+    background: #fafafa;
+    border-left: 4px solid #177997;
+}
+
+.report-summary strong,
+.report-observations strong {
+    color: #14556b;
+    font-size: 13px;
+}
+
+.report-summary p,
+.report-observations p {
+    margin-top: 6px;
+    line-height: 1.5;
+    font-size: 13px;
+}
+
+
+.report-method {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding-top: 22px;
+    margin-top: 22px;
+    border-top: 1px solid #d5e2e6;
+}
+
+.report-method span {
+    display: block;
+    color: #80909b;
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+.report-method strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.report-disclaimer {
+    margin-top: 20px;
+    color: #7b8993;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+
+@media (max-width: 700px) {
+
+    .laboratory-report-header {
+        flex-direction: column;
+    }
+
+    .report-number {
+        text-align: left;
+    }
+
+    .patient-report-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .patient-report-grid > div {
+        border-right: 1px solid #d5e2e6;
+        border-bottom: 1px solid #d5e2e6;
+    }
+
+    .patient-report-grid > div:nth-child(3n) {
+        border-right: 1px solid #d5e2e6;
+    }
+
+    .patient-report-grid > div:nth-child(2n) {
+        border-right: none;
+    }
+
+    .patient-report-grid > div:nth-last-child(-n+3) {
+        border-bottom: 1px solid #d5e2e6;
+    }
+
+    .patient-report-grid > div:nth-last-child(-n+2) {
+        border-bottom: none;
+    }
+
+    .report-method {
+        grid-template-columns: 1fr;
+    }
+
+    .professional-report-table {
+        font-size: 11px;
+    }
+}
+
+.logo-report {
+    display: block;
+
+    width: auto;
+    height: auto;
+
+    max-width: 90px;
+    max-height: 65px;
+
+    object-fit: contain;
+
+    flex-shrink: 0;
+}

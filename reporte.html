@@ -1,22 +1,128 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#177997">
-  <title>Revisar reporte</title>
-  <link rel="stylesheet" href="./css/style.css">
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <script defer src="./js/reporte.js"></script>
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#177997"
+  >
+
+  <title>Reporte de hemograma</title>
+
+  <link
+    rel="stylesheet"
+    href="./css/style.css"
+  >
+
+
+  <script
+    defer
+    src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+  </script>
+
+
+  <script
+    defer
+    src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js">
+  </script>
+
+
+  <script
+    defer
+    src="./js/reporte.js">
+  </script>
+
 </head>
+
+
 <body>
-<header class="header"><div><h1>VetLabAssistant</h1><p>Reporte listo para descargar</p></div></header>
+
+<header class="header">
+
+  <div>
+
+    <h1>VetLabAssistant</h1>
+
+    <p>
+      Informe hematológico
+    </p>
+
+  </div>
+
+</header>
+
+
 <main class="container report-container">
-  <div class="page-header"><a href="./hemograma.html" class="back">← Nueva lectura</a><h2 id="titulo-paciente">Paciente</h2><p id="titulo-especie"></p></div>
-  <section id="report-sheet" class="report-sheet"></section>
-  <div class="download-actions"><a class="secondary-button" href="./hemograma.html">Corregir datos</a><button class="primary-button" id="descargar-pdf" type="button">Descargar PDF</button><button class="primary-button" id="descargar-word" type="button">Descargar Word</button></div>
-  <div id="estado-reporte" class="status-box" hidden></div>
+
+  <div class="page-header">
+
+    <a
+      href="./hemograma.html"
+      class="back">
+      ← Nueva lectura
+    </a>
+
+
+    <h2 id="titulo-paciente">
+      Paciente
+    </h2>
+
+
+    <p id="titulo-especie">
+    </p>
+
+  </div>
+
+
+  <section
+    id="report-sheet"
+    class="report-sheet">
+  </section>
+
+
+  <div class="download-actions">
+
+    <a
+      class="secondary-button"
+      href="./hemograma.html">
+      Corregir datos
+    </a>
+
+
+    <button
+      class="primary-button"
+      id="descargar-pdf"
+      type="button">
+      Descargar PDF
+    </button>
+
+
+    <button
+      class="primary-button"
+      id="descargar-word"
+      type="button">
+      Descargar Word
+    </button>
+
+  </div>
+
+
+  <div
+    id="estado-reporte"
+    class="status-box"
+    hidden>
+  </div>
+
 </main>
+
 </body>
+
 </html>
