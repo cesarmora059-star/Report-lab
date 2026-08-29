@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#177997">
+  <title>Leer hemograma</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script defer src="./js/hemograma.js"></script>
+</head>
+<body>
+<header class="header"><div><h1>VetLabAssistant</h1><p>Lectura de hemogramas</p></div></header>
+<main class="container">
+  <div class="page-header"><a href="./index.html" class="back">← Volver</a><h2>Nuevo hemograma</h2><p>Tome una foto de la pantalla o seleccione una imagen existente.</p></div>
+  <section class="capture-card">
+    <label class="capture-zone" for="imagen"><span class="camera-icon">📷</span><strong>Tomar o seleccionar fotografía</strong><span>JPG, PNG, HEIC compatible con Safari · máximo recomendado 12 MB</span><input id="imagen" type="file" accept="image/*" capture="environment"></label>
+    <img id="vista-previa" class="image-preview" alt="Vista previa" hidden>
+    <button id="leer-imagen" class="primary-button" type="button" disabled>Leer resultados</button>
+    <div id="estado-ocr" class="status-box" aria-live="polite" hidden></div>
+  </section>
+  <form id="form-reporte" hidden>
+    <section class="form-section">
+      <div class="section-heading"><div><h3>Datos detectados</h3><p>Confirme los datos antes de generar el reporte.</p></div><span class="review-badge">Revisión obligatoria</span></div>
+      <div class="form-grid">
+        <div class="form-group"><label for="propietario">Propietario (ID)</label><input id="propietario" name="propietario"></div>
+        <div class="form-group"><label for="paciente">Mascota (ID2)</label><input id="paciente" name="paciente"></div>
+        <div class="form-group"><label for="especie">Especie</label><select id="especie" name="especie" required><option value="">Confirmar especie</option><option value="perro">Perro</option><option value="gato">Gato</option></select></div>
+        <div class="form-group"><label for="edad">Edad</label><input id="edad" name="edad"></div>
+        <div class="form-group"><label for="expediente">Expediente</label><input id="expediente" name="expediente"></div>
+        <div class="form-group"><label for="veterinario">Médico veterinario</label><input id="veterinario" name="veterinario" value="Gabriela Quesada Víquez"></div>
+        <div class="form-group"><label for="fecha">Fecha</label><input id="fecha" name="fecha" type="date" required></div>
+        <div class="form-group"><label for="numero_reporte">Número de reporte</label><input id="numero_reporte" name="numero_reporte" readonly></div>
+      </div>
+    </section>
+    <section class="form-section">
+      <div class="section-heading"><div><h3>Resultados</h3><p>Compare cada valor con la fotografía antes de generar el reporte.</p></div></div>
+      <div class="table-wrap"><table class="edit-table"><thead><tr><th>Parámetro</th><th>Resultado</th><th>Mínimo</th><th>Máximo</th><th>Marca</th></tr></thead><tbody id="filas-resultados"></tbody></table></div>
+    </section>
+    <section class="form-section"><div class="form-group"><label for="observaciones">Observaciones adicionales</label><textarea id="observaciones" name="observaciones" rows="3"></textarea></div></section>
+    <div class="form-actions"><button class="secondary-button" id="volver-leer" type="button">Cambiar fotografía</button><button class="primary-button" type="submit">Revisar reporte</button></div>
+  </form>
+</main>
+</body>
+</html>
