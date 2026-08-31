@@ -29,6 +29,10 @@ async function start() {
         $('#analysis-canvas');
 
 
+    const screenGuide =
+        $('#screen-guide');
+
+
     const captureButton =
         $('#capture-button');
 
@@ -63,10 +67,6 @@ async function start() {
 
     const checkGlare =
         $('#check-glare');
-
-
-    const screenGuide =
-        $('#screen-guide');
 
 
     const photoReview =
@@ -177,14 +177,12 @@ async function start() {
         $('#results-body');
 
 
-
     let currentCapture =
         null;
 
 
     let currentReading =
         null;
-
 
 
     /* =====================================================
@@ -211,7 +209,6 @@ async function start() {
                 10
             );
     }
-
 
 
     function reportNumber() {
@@ -273,7 +270,6 @@ async function start() {
     }
 
 
-
     function setCheck(
         element,
         good
@@ -290,7 +286,6 @@ async function start() {
             !good
         );
     }
-
 
 
     /* =====================================================
@@ -324,11 +319,6 @@ async function start() {
             'guide-warning'
         );
 
-
-        /*
-         * La captura nunca se bloquea
-         * por estas advertencias.
-         */
 
         captureButton.disabled =
             false;
@@ -406,7 +396,6 @@ async function start() {
     }
 
 
-
     /* =====================================================
        CÁMARA
     ===================================================== */
@@ -451,9 +440,17 @@ async function start() {
 
         try {
 
+            /*
+             * AHORA PASAMOS TAMBIÉN LA GUÍA.
+             *
+             * camara.js usa la posición real del elemento
+             * para calcular el recorte exacto.
+             */
+
             await VetLabCamera.init(
                 video,
-                canvas
+                canvas,
+                screenGuide
             );
 
 
@@ -494,7 +491,6 @@ async function start() {
                 true;
         }
     }
-
 
 
     /* =====================================================
@@ -581,8 +577,8 @@ async function start() {
                 </strong>
 
                 <span>
-                    Confirme que toda la pantalla del Exigo
-                    esté visible antes de continuar.
+                    La pantalla quedó dentro de la guía
+                    y la imagen tiene buena calidad.
                 </span>
             `;
 
@@ -611,7 +607,6 @@ async function start() {
     }
 
 
-
     captureButton.addEventListener(
         'click',
         () => {
@@ -627,10 +622,14 @@ async function start() {
                 console.error(
                     error
                 );
+
+
+                alert(
+                    'No se pudo tomar la fotografía.'
+                );
             }
         }
     );
-
 
 
     fileButton.addEventListener(
@@ -640,7 +639,6 @@ async function start() {
             fileInput.click();
         }
     );
-
 
 
     fileInput.addEventListener(
@@ -688,12 +686,10 @@ async function start() {
     );
 
 
-
     cancelReview.addEventListener(
         'click',
         startCamera
     );
-
 
 
     retakeButton.addEventListener(
@@ -702,12 +698,10 @@ async function start() {
     );
 
 
-
     backToCamera.addEventListener(
         'click',
         startCamera
     );
-
 
 
     repeatReading.addEventListener(
@@ -716,16 +710,16 @@ async function start() {
     );
 
 
-
     /* =====================================================
-       PROGRESO OCR
+       PROGRESO
     ===================================================== */
 
     function showProgress(
         data
     ) {
 
-        let percent = 0;
+        let percent =
+            0;
 
 
         switch (
@@ -805,9 +799,8 @@ async function start() {
     }
 
 
-
     /* =====================================================
-       LEER
+       OCR
     ===================================================== */
 
     usePhotoButton.addEventListener(
@@ -899,7 +892,6 @@ async function start() {
     );
 
 
-
     /* =====================================================
        RESULTADOS
     ===================================================== */
@@ -936,7 +928,6 @@ async function start() {
     }
 
 
-
     function referenceText(
         parameter
     ) {
@@ -969,7 +960,6 @@ async function start() {
             `${min} – ${max}`
         );
     }
-
 
 
     function createResultsTable(
@@ -1085,7 +1075,6 @@ async function start() {
     }
 
 
-
     function getCurrentParameters() {
 
         const config =
@@ -1118,7 +1107,6 @@ async function start() {
             }
         );
     }
-
 
 
     function updateResultStatus(
@@ -1172,7 +1160,6 @@ async function start() {
                 status
             );
     }
-
 
 
     /* =====================================================
@@ -1266,9 +1253,8 @@ async function start() {
     }
 
 
-
     /* =====================================================
-       RENDER
+       MOSTRAR LECTURA
     ===================================================== */
 
     function renderReading(
@@ -1312,9 +1298,8 @@ async function start() {
     }
 
 
-
     /* =====================================================
-       CAMBIO MANUAL DE ESPECIE
+       CAMBIO DE ESPECIE
     ===================================================== */
 
     speciesInput.addEventListener(
@@ -1347,9 +1332,8 @@ async function start() {
     );
 
 
-
     /* =====================================================
-       GUARDAR PARA REPORTE
+       REPORTE
     ===================================================== */
 
     confirmationForm.addEventListener(
@@ -1378,7 +1362,9 @@ async function start() {
                 );
 
 
-            if (missing) {
+            if (
+                missing
+            ) {
 
                 updateValidation();
 
@@ -1501,7 +1487,6 @@ async function start() {
                 './reporte.html';
         }
     );
-
 
 
     await startCamera();

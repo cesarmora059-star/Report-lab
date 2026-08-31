@@ -1,3 +1,7 @@
+/* =========================================================
+   BASE
+========================================================= */
+
 * {
     box-sizing: border-box;
 }
@@ -37,7 +41,66 @@ a {
 
 
 /* =========================================================
-   BOTONES
+   PÁGINA PRINCIPAL
+========================================================= */
+
+.app-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e2eaed;
+}
+
+.header-content {
+    max-width: 900px;
+    margin: auto;
+    padding: 18px 22px;
+}
+
+.header-content h1 {
+    margin: 0;
+    color: #116e8b;
+    font-size: 21px;
+}
+
+.header-content p {
+    margin: 3px 0 0;
+    color: #75858c;
+    font-size: 12px;
+}
+
+.home {
+    max-width: 900px;
+    margin: auto;
+    padding: 60px 22px;
+}
+
+.hero {
+    max-width: 560px;
+}
+
+.eyebrow {
+    color: #16809f;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.hero h2 {
+    margin: 10px 0;
+    color: #123d4a;
+    font-size: clamp(30px, 7vw, 48px);
+    line-height: 1.05;
+}
+
+.hero p {
+    margin: 0 0 28px;
+    color: #64757c;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   BOTONES GENERALES
 ========================================================= */
 
 .button {
@@ -59,7 +122,7 @@ a {
 }
 
 .button-primary {
-    color: white;
+    color: #ffffff;
     background: #147b99;
 }
 
@@ -94,13 +157,13 @@ a {
 
     overflow: hidden;
 
-    color: white;
+    color: #ffffff;
     background: #05090b;
 }
 
 .camera-header {
     position: relative;
-    z-index: 20;
+    z-index: 30;
 
     display: flex;
     align-items: center;
@@ -124,10 +187,10 @@ a {
 
 .camera-header span {
     display: block;
-
     margin-top: 2px;
 
     color: #8fa0a7;
+
     font-size: 11px;
 }
 
@@ -135,15 +198,15 @@ a {
     width: 38px;
     height: 38px;
 
+    flex: 0 0 auto;
+
     display: flex;
     align-items: center;
     justify-content: center;
 
-    flex: 0 0 auto;
-
     border-radius: 50%;
 
-    color: white;
+    color: #ffffff;
 
     text-decoration: none;
 
@@ -169,7 +232,7 @@ a {
 
     overflow: hidden;
 
-    background: black;
+    background: #000000;
 }
 
 #camera-video {
@@ -190,90 +253,128 @@ a {
 .guide-instructions {
     position: absolute;
 
-    z-index: 18;
+    z-index: 25;
 
     left: 50%;
-    top: 4%;
+    top: 7%;
 
     width: min(
-        88%,
-        420px
+        90%,
+        430px
     );
 
     transform:
         translateX(-50%);
 
+    padding:
+        8px
+        14px;
+
+    border-radius: 12px;
+
     text-align: center;
 
     pointer-events: none;
 
-    text-shadow:
-        0 2px 8px
+    background:
         rgba(
-            0,
-            0,
-            0,
-            0.95
+            4,
+            13,
+            17,
+            0.55
         );
+
+    backdrop-filter:
+        blur(6px);
+
+    -webkit-backdrop-filter:
+        blur(6px);
 }
 
 .guide-instructions strong {
     display: block;
 
-    font-size: 16px;
+    color: #ffffff;
+
+    font-size: 15px;
 }
 
 .guide-instructions span {
     display: block;
 
-    margin-top: 5px;
+    margin-top: 4px;
 
     color:
         rgba(
             255,
             255,
             255,
-            0.88
+            0.86
         );
 
-    font-size: 12px;
+    font-size: 11px;
 
     line-height: 1.4;
 }
 
 
 /* =========================================================
-   GUÍAS
+   GUÍA EXIGO
+
+   Geometría final:
+
+   izquierda: 19%
+   arriba:    20%
+   ancho:     62%
+   alto:      57%
+
+   La parte inferior entra 2.5% por cada lado.
 ========================================================= */
 
 .screen-guide {
     position: absolute;
 
-    z-index: 10;
+    z-index: 20;
 
-    left: 18%;
-    top: 16%;
+    left: 19%;
+    top: 20%;
 
-    width: 64%;
-    height: 62%;
+    width: 62%;
+    height: 57%;
 
     pointer-events: none;
 }
 
+
+/* =========================================================
+   ESQUINAS
+
+   Son deliberadamente curvas para imitar mejor
+   la forma de la pantalla del Exigo.
+========================================================= */
+
 .guide-corner {
     position: absolute;
 
-    width: 42px;
-    height: 42px;
+    width: 50px;
+    height: 50px;
+
+    transition:
+        transform
+        0.2s ease;
 }
+
+
+/*
+ * Cada esquina está formada por dos líneas con
+ * extremos redondeados.
+ */
 
 .guide-corner::before,
 .guide-corner::after {
     content: "";
 
     position: absolute;
-
-    border-radius: 3px;
 
     background:
         rgba(
@@ -289,27 +390,58 @@ a {
             0,
             0,
             0,
-            0.5
+            0.55
         );
 
     transition:
+        background
+        0.2s ease,
+        box-shadow
         0.2s ease;
 }
 
+
+/*
+ * Línea horizontal
+ */
+
 .guide-corner::before {
-    width: 42px;
-    height: 4px;
+    width: 46px;
+    height: 5px;
+
+    border-radius:
+        6px
+        6px
+        3px
+        3px;
 }
 
+
+/*
+ * Línea vertical
+ */
+
 .guide-corner::after {
-    width: 4px;
-    height: 42px;
+    width: 5px;
+    height: 46px;
+
+    border-radius:
+        6px
+        3px
+        3px
+        6px;
 }
+
+
+/* Superior izquierda */
 
 .corner-tl {
     top: 0;
     left: 0;
 }
+
+
+/* Superior derecha */
 
 .corner-tr {
     top: 0;
@@ -319,41 +451,146 @@ a {
         rotate(90deg);
 }
 
-.corner-br {
-    bottom: 0;
-    right: 0;
 
-    transform:
-        rotate(180deg);
-}
+/*
+ * Inferiores ligeramente hacia adentro.
+ *
+ * 2.5% + 2.5% =
+ * aproximadamente 5% más estrecho abajo.
+ */
 
 .corner-bl {
     bottom: 0;
-    left: 0;
+    left: 2.5%;
 
     transform:
         rotate(270deg);
 }
 
-.screen-guide.guide-good
-.guide-corner::before,
 
-.screen-guide.guide-good
-.guide-corner::after {
-    background: #72e7b4;
-}
+.corner-br {
+    bottom: 0;
+    right: 2.5%;
 
-.screen-guide.guide-warning
-.guide-corner::before,
-
-.screen-guide.guide-warning
-.guide-corner::after {
-    background: #ffd176;
+    transform:
+        rotate(180deg);
 }
 
 
 /* =========================================================
-   SOMBREADO
+   PEQUEÑA CURVA VISUAL
+
+   Estas líneas transparentes hacen que el usuario
+   perciba mejor la orientación del marco sin dibujar
+   un rectángulo completo.
+========================================================= */
+
+.screen-guide::before,
+.screen-guide::after {
+    content: "";
+
+    position: absolute;
+
+    bottom: 0;
+
+    width: 16%;
+    height: 16%;
+
+    opacity: 0.18;
+
+    pointer-events: none;
+}
+
+.screen-guide::before {
+    left: 2.5%;
+
+    border-left:
+        2px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.6
+        );
+
+    border-bottom:
+        2px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.6
+        );
+
+    border-bottom-left-radius:
+        22px;
+}
+
+.screen-guide::after {
+    right: 2.5%;
+
+    border-right:
+        2px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.6
+        );
+
+    border-bottom:
+        2px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.6
+        );
+
+    border-bottom-right-radius:
+        22px;
+}
+
+
+/* =========================================================
+   ESTADO DE LA GUÍA
+========================================================= */
+
+.screen-guide.guide-good
+.guide-corner::before,
+
+.screen-guide.guide-good
+.guide-corner::after {
+
+    background:
+        #72e7b4;
+
+    box-shadow:
+        0 0 12px
+        rgba(
+            114,
+            231,
+            180,
+            0.6
+        );
+}
+
+
+.screen-guide.guide-warning
+.guide-corner::before,
+
+.screen-guide.guide-warning
+.guide-corner::after {
+
+    background:
+        #ffd176;
+}
+
+
+/* =========================================================
+   SOMBREADO EXTERIOR
+
+   Coincide con la caja principal de la guía.
 ========================================================= */
 
 .camera-shade {
@@ -377,7 +614,7 @@ a {
     left: 0;
 
     width: 100%;
-    height: 16%;
+    height: 20%;
 }
 
 .camera-shade-bottom {
@@ -385,23 +622,23 @@ a {
     left: 0;
 
     width: 100%;
-    height: 22%;
+    height: 23%;
 }
 
 .camera-shade-left {
     left: 0;
-    top: 16%;
+    top: 20%;
 
-    width: 18%;
-    height: 62%;
+    width: 19%;
+    height: 57%;
 }
 
 .camera-shade-right {
     right: 0;
-    top: 16%;
+    top: 20%;
 
-    width: 18%;
-    height: 62%;
+    width: 19%;
+    height: 57%;
 }
 
 
@@ -412,14 +649,14 @@ a {
 .quality-panel {
     position: absolute;
 
-    z-index: 15;
+    z-index: 25;
 
     left: 50%;
-    bottom: 14px;
+    bottom: 13px;
 
     width:
         calc(
-            100% - 30px
+            100% - 28px
         );
 
     max-width: 430px;
@@ -427,7 +664,9 @@ a {
     transform:
         translateX(-50%);
 
-    padding: 11px 13px;
+    padding:
+        11px
+        13px;
 
     border:
         1px solid
@@ -445,7 +684,7 @@ a {
             5,
             15,
             19,
-            0.8
+            0.82
         );
 
     backdrop-filter:
@@ -463,6 +702,7 @@ a {
 
 .quality-main strong {
     display: block;
+
     font-size: 13px;
 }
 
@@ -491,6 +731,15 @@ a {
 
 .quality-dot.good {
     background: #3ed598;
+
+    box-shadow:
+        0 0 10px
+        rgba(
+            62,
+            213,
+            152,
+            0.55
+        );
 }
 
 .quality-dot.warning {
@@ -505,7 +754,9 @@ a {
 }
 
 .mini-check {
-    padding: 4px 7px;
+    padding:
+        4px
+        7px;
 
     border-radius: 999px;
 
@@ -549,7 +800,7 @@ a {
 
 
 /* =========================================================
-   CONTROLES
+   CONTROLES DE CÁMARA
 ========================================================= */
 
 .camera-controls {
@@ -594,7 +845,9 @@ a {
 
     padding: 4px;
 
-    border: 3px solid white;
+    border:
+        3px solid
+        #ffffff;
 
     border-radius: 50%;
 
@@ -611,7 +864,7 @@ a {
 
     border-radius: 50%;
 
-    background: white;
+    background: #ffffff;
 }
 
 .shutter-button:disabled {
@@ -643,7 +896,7 @@ a {
 
     background: #071014;
 
-    color: white;
+    color: #ffffff;
 }
 
 .review-header,
@@ -670,7 +923,7 @@ a {
 .simple-header {
     gap: 10px;
 
-    background: white;
+    background: #ffffff;
 
     border-bottom:
         1px solid
@@ -723,7 +976,7 @@ a {
 
     border-radius: 14px;
 
-    background: black;
+    background: #000000;
 }
 
 .review-image-wrap img {
@@ -744,7 +997,9 @@ a {
         auto
         0;
 
-    padding: 13px 15px;
+    padding:
+        13px
+        15px;
 
     border-radius: 12px;
 }
@@ -920,7 +1175,7 @@ a {
 
 
 /* =========================================================
-   CONFIRMACIÓN
+   PANTALLA DE CONFIRMACIÓN
 ========================================================= */
 
 .result-screen {
@@ -961,7 +1216,7 @@ a {
 
     border-radius: 12px;
 
-    background: white;
+    background: #ffffff;
 }
 
 .recognition-summary span {
@@ -984,13 +1239,15 @@ a {
 
 
 /* =========================================================
-   IMAGEN
+   IMAGEN ANALIZADA
 ========================================================= */
 
 .image-details {
     margin-bottom: 15px;
 
-    padding: 12px 14px;
+    padding:
+        12px
+        14px;
 
     border:
         1px solid
@@ -998,7 +1255,7 @@ a {
 
     border-radius: 12px;
 
-    background: white;
+    background: #ffffff;
 }
 
 .image-details summary {
@@ -1028,7 +1285,7 @@ a {
 
 
 /* =========================================================
-   FORMULARIO
+   FORMULARIOS
 ========================================================= */
 
 .form-card {
@@ -1042,7 +1299,7 @@ a {
 
     border-radius: 14px;
 
-    background: white;
+    background: #ffffff;
 }
 
 .form-card-title {
@@ -1124,7 +1381,7 @@ a {
 
     color: #173f4c;
 
-    background: white;
+    background: #ffffff;
 }
 
 .field textarea {
@@ -1357,6 +1614,27 @@ a {
 
 
 /* =========================================================
+   LOGO
+
+   Nunca deformar.
+========================================================= */
+
+.logo-report {
+    display: block;
+
+    width: auto;
+    height: auto;
+
+    max-width: 90px;
+    max-height: 65px;
+
+    object-fit: contain;
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
    RESPONSIVE
 ========================================================= */
 
@@ -1366,12 +1644,6 @@ a {
 
     .form-grid {
         grid-template-columns:
-            1fr;
-    }
-
-    .recognition-summary {
-        grid-template-columns:
-            1fr
             1fr;
     }
 
@@ -1397,11 +1669,5 @@ a {
         border-right:
             1px solid
             #182327;
-    }
-
-    .screen-guide {
-        left: 22%;
-
-        width: 56%;
     }
 }

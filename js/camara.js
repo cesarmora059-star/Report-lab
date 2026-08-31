@@ -11,7 +11,41 @@ window.VetLabCamera = (() => {
 
     let context = null;
 
+    let guideElement = null;
+
     let qualityTimer = null;
+
+
+    /* =====================================================
+       CONFIGURACIÓN DE LA GUÍA EXIGO
+
+       Esta geometría corresponde a la guía visual:
+
+       left:   19%
+       top:    20%
+       width:  62%
+       height: 57%
+
+       La parte inferior es ligeramente más estrecha.
+    ===================================================== */
+
+    const GUIDE = {
+
+        left: 0.19,
+
+        top: 0.20,
+
+        width: 0.62,
+
+        height: 0.57,
+
+        /*
+         * Cada esquina inferior entra un 2.5%
+         * respecto al ancho total de la guía.
+         */
+
+        bottomInset: 0.025
+    };
 
 
     const LIMITS = {
@@ -26,9 +60,14 @@ window.VetLabCamera = (() => {
     };
 
 
+    /* =====================================================
+       INICIALIZAR CÁMARA
+    ===================================================== */
+
     async function init(
         videoElement,
-        canvasElement
+        canvasElement,
+        guide
     ) {
 
         stop();
@@ -37,8 +76,13 @@ window.VetLabCamera = (() => {
         video =
             videoElement;
 
+
         canvas =
             canvasElement;
+
+
+        guideElement =
+            guide || null;
 
 
         context =
@@ -100,7 +144,7 @@ window.VetLabCamera = (() => {
 
 
             video.onloadedmetadata =
-                resolve;
+                () => resolve();
         });
 
 
@@ -108,6 +152,9 @@ window.VetLabCamera = (() => {
     }
 
 
+    /* =====================================================
+       DETENER CÁMARA
+    ===================================================== */
 
     function stop() {
 
@@ -137,22 +184,9 @@ window.VetLabCamera = (() => {
     }
 
 
-
-    function getGuideRect() {
-
-        return {
-
-            x: 0.18,
-
-            y: 0.16,
-
-            width: 0.64,
-
-            height: 0.62
-        };
-    }
-
-
+    /* =====================================================
+       FRAME ORIGINAL
+    ===================================================== */
 
     function drawVideoFrame() {
 
@@ -168,6 +202,7 @@ window.VetLabCamera = (() => {
 
         canvas.width =
             video.videoWidth;
+
 
         canvas.height =
             video.videoHeight;
@@ -186,68 +221,382 @@ window.VetLabCamera = (() => {
     }
 
 
+    /* =====================================================
+       MAPEO VISOR → IMAGEN REAL
 
-    function cropGuide(sourceCanvas) {
+       El video usa object-fit: cover.
 
-        const guide =
-            getGuideRect();
+       Eso significa que Safari puede recortar parte de la
+       imagen original para llenar el visor.
+
+       Esta función calcula exactamente qué píxel original
+       corresponde a una posición visible de la pantalla.
+    ===================================================== */
+
+    function screenPointToSource(
+        displayX,
+        displayY
+    ) {
+
+        const displayWidth =
+            video.clientWidth;
 
 
-        const sx =
-            Math.round(
-                sourceCanvas.width *
-                guide.x
+        const displayHeight =
+            video.clientHeight;
+
+
+        const sourceWidth =
+            video.videoWidth;
+
+
+        const sourceHeight =
+            video.videoHeight;
+
+
+        const scale =
+            Math.max(
+
+                displayWidth /
+                sourceWidth,
+
+                displayHeight /
+                sourceHeight
             );
 
 
-        const sy =
-            Math.round(
-                sourceCanvas.height *
-                guide.y
-            );
+        const renderedWidth =
+            sourceWidth *
+            scale;
 
 
-        const sw =
-            Math.round(
-                sourceCanvas.width *
-                guide.width
-            );
+        const renderedHeight =
+            sourceHeight *
+            scale;
 
 
-        const sh =
-            Math.round(
-                sourceCanvas.height *
-                guide.height
-            );
+        const cropX =
+            (
+                renderedWidth -
+                displayWidth
+            ) / 2;
+
+
+        const cropY =
+            (
+                renderedHeight -
+                displayHeight
+            ) / 2;
+
+
+        const sourceX =
+            (
+                displayX +
+                cropX
+            ) /
+            scale;
+
+
+        const sourceY =
+            (
+                displayY +
+                cropY
+            ) /
+            scale;
+
+
+        return {
+
+            x:
+                Math.max(
+                    0,
+                    Math.min(
+                        sourceWidth,
+                        sourceX
+                    )
+                ),
+
+            y:
+                Math.max(
+                    0,
+                    Math.min(
+                        sourceHeight,
+                        sourceY
+                    )
+                )
+        };
+    }
+
+
+    /* =====================================================
+       CUATRO PUNTOS DE LA GUÍA
+
+       A -------- B
+        \        /
+         \      /
+          D----C
+
+       La diferencia es muy leve.
+    ===================================================== */
+
+    function getGuideDisplayPoints() {
+
+        const width =
+            video.clientWidth;
+
+
+        const height =
+            video.clientHeight;
 
 
         /*
-         * IMPORTANTE
-         *
-         * Conservamos la proporción original.
-         * No deformamos la pantalla.
+         * Si tenemos el elemento real usamos su posición
+         * exacta. Así CSS y JavaScript siempre coinciden.
          */
 
-        const maximumWidth =
+        if (guideElement) {
+
+            const guideRect =
+                guideElement.getBoundingClientRect();
+
+
+            const videoRect =
+                video.getBoundingClientRect();
+
+
+            const x =
+                guideRect.left -
+                videoRect.left;
+
+
+            const y =
+                guideRect.top -
+                videoRect.top;
+
+
+            const w =
+                guideRect.width;
+
+
+            const h =
+                guideRect.height;
+
+
+            const inset =
+                w *
+                GUIDE.bottomInset;
+
+
+            return {
+
+                topLeft: {
+                    x,
+                    y
+                },
+
+                topRight: {
+                    x:
+                        x + w,
+                    y
+                },
+
+                bottomRight: {
+                    x:
+                        x + w - inset,
+                    y:
+                        y + h
+                },
+
+                bottomLeft: {
+                    x:
+                        x + inset,
+                    y:
+                        y + h
+                }
+            };
+        }
+
+
+        /*
+         * Fallback basado en porcentajes.
+         */
+
+        const x =
+            width *
+            GUIDE.left;
+
+
+        const y =
+            height *
+            GUIDE.top;
+
+
+        const w =
+            width *
+            GUIDE.width;
+
+
+        const h =
+            height *
+            GUIDE.height;
+
+
+        const inset =
+            w *
+            GUIDE.bottomInset;
+
+
+        return {
+
+            topLeft: {
+                x,
+                y
+            },
+
+            topRight: {
+                x:
+                    x + w,
+                y
+            },
+
+            bottomRight: {
+                x:
+                    x + w - inset,
+                y:
+                    y + h
+            },
+
+            bottomLeft: {
+                x:
+                    x + inset,
+                y:
+                    y + h
+            }
+        };
+    }
+
+
+    function getGuideSourcePoints() {
+
+        const display =
+            getGuideDisplayPoints();
+
+
+        return {
+
+            topLeft:
+                screenPointToSource(
+                    display.topLeft.x,
+                    display.topLeft.y
+                ),
+
+            topRight:
+                screenPointToSource(
+                    display.topRight.x,
+                    display.topRight.y
+                ),
+
+            bottomRight:
+                screenPointToSource(
+                    display.bottomRight.x,
+                    display.bottomRight.y
+                ),
+
+            bottomLeft:
+                screenPointToSource(
+                    display.bottomLeft.x,
+                    display.bottomLeft.y
+                )
+        };
+    }
+
+
+    /* =====================================================
+       NORMALIZACIÓN DEL TRAPECIO
+
+       Como nuestra guía tiene una perspectiva muy ligera,
+       rectificamos cada línea horizontal antes del OCR.
+
+       El resultado vuelve a ser rectangular.
+    ===================================================== */
+
+    function rectifyGuide(
+        sourceCanvas,
+        points
+    ) {
+
+        const topWidth =
+
+            points.topRight.x -
+            points.topLeft.x;
+
+
+        const bottomWidth =
+
+            points.bottomRight.x -
+            points.bottomLeft.x;
+
+
+        const leftHeight =
+
+            points.bottomLeft.y -
+            points.topLeft.y;
+
+
+        const rightHeight =
+
+            points.bottomRight.y -
+            points.topRight.y;
+
+
+        const averageWidth =
+            (
+                topWidth +
+                bottomWidth
+            ) / 2;
+
+
+        const averageHeight =
+            (
+                leftHeight +
+                rightHeight
+            ) / 2;
+
+
+        /*
+         * Limitamos tamaño para no gastar demasiada RAM
+         * en Safari del iPhone.
+         */
+
+        const maxWidth =
             1100;
 
 
         const scale =
             Math.min(
                 1,
-                maximumWidth / sw
+                maxWidth /
+                averageWidth
             );
 
 
         const outputWidth =
-            Math.round(
-                sw * scale
+            Math.max(
+                600,
+                Math.round(
+                    averageWidth *
+                    scale
+                )
             );
 
 
         const outputHeight =
-            Math.round(
-                sh * scale
+            Math.max(
+                700,
+                Math.round(
+                    averageHeight *
+                    scale
+                )
             );
 
 
@@ -260,11 +609,12 @@ window.VetLabCamera = (() => {
         output.width =
             outputWidth;
 
+
         output.height =
             outputHeight;
 
 
-        const outputContext =
+        const outCtx =
             output.getContext(
                 '2d',
                 {
@@ -273,26 +623,228 @@ window.VetLabCamera = (() => {
             );
 
 
-        outputContext.drawImage(
+        /*
+         * Rectificamos línea por línea.
+         *
+         * Para cada altura interpolamos los límites
+         * izquierdo y derecho del trapecio.
+         */
 
-            sourceCanvas,
+        for (
+            let outputY = 0;
+            outputY < outputHeight;
+            outputY++
+        ) {
 
-            sx,
-            sy,
-            sw,
-            sh,
+            const t =
+                outputHeight > 1
+                    ? outputY /
+                      (
+                          outputHeight -
+                          1
+                      )
+                    : 0;
 
-            0,
-            0,
-            outputWidth,
-            outputHeight
-        );
+
+            const leftX =
+                points.topLeft.x +
+                (
+                    points.bottomLeft.x -
+                    points.topLeft.x
+                ) *
+                t;
+
+
+            const rightX =
+                points.topRight.x +
+                (
+                    points.bottomRight.x -
+                    points.topRight.x
+                ) *
+                t;
+
+
+            const leftY =
+                points.topLeft.y +
+                (
+                    points.bottomLeft.y -
+                    points.topLeft.y
+                ) *
+                t;
+
+
+            const rightY =
+                points.topRight.y +
+                (
+                    points.bottomRight.y -
+                    points.topRight.y
+                ) *
+                t;
+
+
+            const sourceY =
+                (
+                    leftY +
+                    rightY
+                ) / 2;
+
+
+            const rowWidth =
+                rightX -
+                leftX;
+
+
+            if (
+                rowWidth <= 1
+            ) {
+
+                continue;
+            }
+
+
+            outCtx.drawImage(
+
+                sourceCanvas,
+
+                leftX,
+                sourceY,
+                rowWidth,
+                1,
+
+                0,
+                outputY,
+                outputWidth,
+                1
+            );
+        }
 
 
         return output;
     }
 
 
+    /* =====================================================
+       OBTENER IMAGEN NORMALIZADA
+    ===================================================== */
+
+    function getGuideCrop(
+        sourceCanvas
+    ) {
+
+        /*
+         * Si estamos usando una fotografía de galería
+         * no existe correspondencia física con el visor.
+
+         * Para esas fotos usamos las proporciones generales.
+         */
+
+        if (
+            !video ||
+            !video.videoWidth ||
+            !video.clientWidth
+        ) {
+
+            return cropByPercentages(
+                sourceCanvas
+            );
+        }
+
+
+        const points =
+            getGuideSourcePoints();
+
+
+        return rectifyGuide(
+            sourceCanvas,
+            points
+        );
+    }
+
+
+    /* =====================================================
+       RECORTE PORCENTUAL PARA FOTOS IMPORTADAS
+    ===================================================== */
+
+    function cropByPercentages(
+        sourceCanvas
+    ) {
+
+        const x =
+            sourceCanvas.width *
+            GUIDE.left;
+
+
+        const y =
+            sourceCanvas.height *
+            GUIDE.top;
+
+
+        const width =
+            sourceCanvas.width *
+            GUIDE.width;
+
+
+        const height =
+            sourceCanvas.height *
+            GUIDE.height;
+
+
+        const inset =
+            width *
+            GUIDE.bottomInset;
+
+
+        const points = {
+
+            topLeft: {
+
+                x,
+                y
+            },
+
+            topRight: {
+
+                x:
+                    x + width,
+
+                y
+            },
+
+            bottomRight: {
+
+                x:
+                    x +
+                    width -
+                    inset,
+
+                y:
+                    y +
+                    height
+            },
+
+            bottomLeft: {
+
+                x:
+                    x +
+                    inset,
+
+                y:
+                    y +
+                    height
+            }
+        };
+
+
+        return rectifyGuide(
+            sourceCanvas,
+            points
+        );
+    }
+
+
+    /* =====================================================
+       LUMINOSIDAD
+    ===================================================== */
 
     function calculateBrightness(
         imageData
@@ -315,11 +867,14 @@ window.VetLabCamera = (() => {
 
             total +=
 
-                data[i] * 0.299 +
+                data[i] *
+                0.299 +
 
-                data[i + 1] * 0.587 +
+                data[i + 1] *
+                0.587 +
 
-                data[i + 2] * 0.114;
+                data[i + 2] *
+                0.114;
 
 
             samples++;
@@ -327,11 +882,15 @@ window.VetLabCamera = (() => {
 
 
         return samples
-            ? total / samples
+            ? total /
+              samples
             : 0;
     }
 
 
+    /* =====================================================
+       REFLEJO
+    ===================================================== */
 
     function calculateGlare(
         imageData
@@ -341,9 +900,12 @@ window.VetLabCamera = (() => {
             imageData.data;
 
 
-        let glarePixels = 0;
+        let glarePixels =
+            0;
 
-        let samples = 0;
+
+        let samples =
+            0;
 
 
         for (
@@ -367,11 +929,15 @@ window.VetLabCamera = (() => {
 
 
         return samples
-            ? glarePixels / samples
+            ? glarePixels /
+              samples
             : 0;
     }
 
 
+    /* =====================================================
+       NITIDEZ
+    ===================================================== */
 
     function calculateSharpness(
         imageData,
@@ -383,15 +949,21 @@ window.VetLabCamera = (() => {
             imageData.data;
 
 
-        let total = 0;
-
-        let samples = 0;
-
-
-        const step = 4;
+        let total =
+            0;
 
 
-        function gray(index) {
+        let samples =
+            0;
+
+
+        const step =
+            4;
+
+
+        function gray(
+            index
+        ) {
 
             return (
 
@@ -418,34 +990,54 @@ window.VetLabCamera = (() => {
             ) {
 
                 const center =
-                    (y * width + x) * 4;
+                    (
+                        y *
+                        width +
+                        x
+                    ) *
+                    4;
 
 
                 const right =
                     (
-                        y * width +
-                        x + step
-                    ) * 4;
+                        y *
+                        width +
+                        x +
+                        step
+                    ) *
+                    4;
 
 
                 const bottom =
                     (
-                        (y + step) *
+                        (
+                            y +
+                            step
+                        ) *
                         width +
                         x
-                    ) * 4;
+                    ) *
+                    4;
 
 
                 total +=
 
                     Math.abs(
-                        gray(center) -
-                        gray(right)
+                        gray(
+                            center
+                        ) -
+                        gray(
+                            right
+                        )
                     ) +
 
                     Math.abs(
-                        gray(center) -
-                        gray(bottom)
+                        gray(
+                            center
+                        ) -
+                        gray(
+                            bottom
+                        )
                     );
 
 
@@ -455,18 +1047,22 @@ window.VetLabCamera = (() => {
 
 
         return samples
-            ? total / samples
+            ? total /
+              samples
             : 0;
     }
 
 
+    /* =====================================================
+       ANÁLISIS DE CALIDAD
+    ===================================================== */
 
     function analyzeCanvas(
         sourceCanvas
     ) {
 
         const crop =
-            cropGuide(
+            getGuideCrop(
                 sourceCanvas
             );
 
@@ -491,13 +1087,16 @@ window.VetLabCamera = (() => {
 
 
         analysis.height =
-            Math.round(
-                analysisWidth *
-                ratio
+            Math.max(
+                250,
+                Math.round(
+                    analysisWidth *
+                    ratio
+                )
             );
 
 
-        const ctx =
+        const analysisCtx =
             analysis.getContext(
                 '2d',
                 {
@@ -506,7 +1105,7 @@ window.VetLabCamera = (() => {
             );
 
 
-        ctx.drawImage(
+        analysisCtx.drawImage(
             crop,
             0,
             0,
@@ -516,7 +1115,7 @@ window.VetLabCamera = (() => {
 
 
         const imageData =
-            ctx.getImageData(
+            analysisCtx.getImageData(
                 0,
                 0,
                 analysis.width,
@@ -566,12 +1165,15 @@ window.VetLabCamera = (() => {
 
 
         const goodCount =
+
             [
                 lightGood,
                 glareGood,
                 sharpnessGood
             ]
-                .filter(Boolean)
+                .filter(
+                    Boolean
+                )
                 .length;
 
 
@@ -579,7 +1181,9 @@ window.VetLabCamera = (() => {
             'poor';
 
 
-        if (goodCount === 3) {
+        if (
+            goodCount === 3
+        ) {
 
             qualityLevel =
                 'good';
@@ -598,7 +1202,8 @@ window.VetLabCamera = (() => {
             qualityLevel,
 
             acceptable:
-                qualityLevel !== 'poor',
+                qualityLevel !==
+                'poor',
 
             brightness,
 
@@ -623,6 +1228,9 @@ window.VetLabCamera = (() => {
     }
 
 
+    /* =====================================================
+       MONITOREO EN VIVO
+    ===================================================== */
 
     function analyzeCurrentFrame() {
 
@@ -640,12 +1248,13 @@ window.VetLabCamera = (() => {
     }
 
 
-
     function startQualityMonitoring(
         callback
     ) {
 
-        if (qualityTimer) {
+        if (
+            qualityTimer
+        ) {
 
             clearInterval(
                 qualityTimer
@@ -672,11 +1281,14 @@ window.VetLabCamera = (() => {
                     }
 
                 },
-                500
+                550
             );
     }
 
 
+    /* =====================================================
+       CAPTURAR
+    ===================================================== */
 
     function capture() {
 
@@ -715,6 +1327,9 @@ window.VetLabCamera = (() => {
     }
 
 
+    /* =====================================================
+       FOTO IMPORTADA
+    ===================================================== */
 
     function loadFile(
         file
@@ -765,9 +1380,21 @@ window.VetLabCamera = (() => {
                                     );
 
 
-                                const quality =
-                                    analyzeCanvas(
+                                /*
+                                 * En fotos importadas usamos porcentajes,
+                                 * porque la fotografía no fue tomada
+                                 * directamente dentro de nuestro visor.
+                                 */
+
+                                const crop =
+                                    cropByPercentages(
                                         source
+                                    );
+
+
+                                const quality =
+                                    analyzeImportedCrop(
+                                        crop
                                     );
 
 
@@ -777,7 +1404,7 @@ window.VetLabCamera = (() => {
                                         event.target.result,
 
                                     normalized:
-                                        quality.crop.toDataURL(
+                                        crop.toDataURL(
                                             'image/jpeg',
                                             0.97
                                         ),
@@ -788,7 +1415,12 @@ window.VetLabCamera = (() => {
 
 
                         image.onerror =
-                            reject;
+                            () =>
+                                reject(
+                                    new Error(
+                                        'No se pudo abrir la fotografía.'
+                                    )
+                                );
 
 
                         image.src =
@@ -797,7 +1429,12 @@ window.VetLabCamera = (() => {
 
 
                 reader.onerror =
-                    reject;
+                    () =>
+                        reject(
+                            new Error(
+                                'No se pudo leer la fotografía.'
+                            )
+                        );
 
 
                 reader.readAsDataURL(
@@ -807,6 +1444,136 @@ window.VetLabCamera = (() => {
         );
     }
 
+
+    function analyzeImportedCrop(
+        crop
+    ) {
+
+        const analysis =
+            document.createElement(
+                'canvas'
+            );
+
+
+        analysis.width =
+            280;
+
+
+        analysis.height =
+            Math.round(
+
+                280 *
+
+                crop.height /
+                crop.width
+            );
+
+
+        const ctx =
+            analysis.getContext(
+                '2d',
+                {
+                    willReadFrequently: true
+                }
+            );
+
+
+        ctx.drawImage(
+            crop,
+            0,
+            0,
+            analysis.width,
+            analysis.height
+        );
+
+
+        const data =
+            ctx.getImageData(
+                0,
+                0,
+                analysis.width,
+                analysis.height
+            );
+
+
+        const brightness =
+            calculateBrightness(
+                data
+            );
+
+
+        const glare =
+            calculateGlare(
+                data
+            );
+
+
+        const sharpness =
+            calculateSharpness(
+                data,
+                analysis.width,
+                analysis.height
+            );
+
+
+        const light =
+            brightness >=
+                LIMITS.minBrightness &&
+            brightness <=
+                LIMITS.maxBrightness;
+
+
+        const glareGood =
+            glare <=
+            LIMITS.maxGlare;
+
+
+        const sharpnessGood =
+            sharpness >=
+            LIMITS.minSharpness;
+
+
+        const count =
+            [
+                light,
+                glareGood,
+                sharpnessGood
+            ]
+                .filter(
+                    Boolean
+                )
+                .length;
+
+
+        return {
+
+            qualityLevel:
+                count === 3
+                    ? 'good'
+                    : count >= 2
+                        ? 'acceptable'
+                        : 'poor',
+
+            checks: {
+
+                light,
+
+                glare:
+                    glareGood,
+
+                sharpness:
+                    sharpnessGood
+            },
+
+            brightness,
+
+            glare,
+
+            sharpness,
+
+            crop
+        };
+    }
 
 
     return {
@@ -821,7 +1588,10 @@ window.VetLabCamera = (() => {
 
         startQualityMonitoring,
 
-        getGuideRect
+        getGuideRect:
+            () => ({
+                ...GUIDE
+            })
     };
 
 })();
