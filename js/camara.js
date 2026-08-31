@@ -1,38 +1,53 @@
 'use strict';
 
+
 window.VetLabCamera = (() => {
 
     let stream = null;
+
     let video = null;
+
     let canvas = null;
-    let ctx = null;
+
+    let context = null;
+
     let qualityTimer = null;
-    let lastQuality = null;
 
 
-    const QUALITY_LIMITS = {
+    const LIMITS = {
 
-        minBrightness: 45,
+        minBrightness: 42,
 
-        maxBrightness: 235,
+        maxBrightness: 238,
 
-        minSharpness: 55,
+        minSharpness: 45,
 
-        maxGlare: 0.18
+        maxGlare: 0.20
     };
 
 
-    async function init(videoElement, canvasElement) {
+    async function init(
+        videoElement,
+        canvasElement
+    ) {
 
-        video = videoElement;
-        canvas = canvasElement;
+        stop();
 
-        ctx = canvas.getContext(
-            '2d',
-            {
-                willReadFrequently: true
-            }
-        );
+
+        video =
+            videoElement;
+
+        canvas =
+            canvasElement;
+
+
+        context =
+            canvas.getContext(
+                '2d',
+                {
+                    willReadFrequently: true
+                }
+            );
 
 
         if (
@@ -41,7 +56,7 @@ window.VetLabCamera = (() => {
         ) {
 
             throw new Error(
-                'Este navegador no permite utilizar la cámara directamente.'
+                'El navegador no permite utilizar la cámara.'
             );
         }
 
@@ -68,36 +83,42 @@ window.VetLabCamera = (() => {
             });
 
 
-        video.srcObject = stream;
+        video.srcObject =
+            stream;
 
 
         await new Promise(resolve => {
 
-            if (video.readyState >= 2) {
+            if (
+                video.readyState >= 2
+            ) {
 
                 resolve();
+
                 return;
             }
 
-            video.onloadedmetadata =
-                () => resolve();
 
+            video.onloadedmetadata =
+                resolve;
         });
 
 
         await video.play();
-
-        return true;
     }
+
 
 
     function stop() {
 
         if (qualityTimer) {
 
-            clearInterval(qualityTimer);
+            clearInterval(
+                qualityTimer
+            );
 
-            qualityTimer = null;
+            qualityTimer =
+                null;
         }
 
 
@@ -105,19 +126,19 @@ window.VetLabCamera = (() => {
 
             stream
                 .getTracks()
-                .forEach(track => track.stop());
+                .forEach(
+                    track =>
+                        track.stop()
+                );
 
-            stream = null;
+            stream =
+                null;
         }
     }
 
 
-    function getGuideRect() {
 
-        /*
-         * Guía adaptada visualmente a la pantalla real del Exigo.
-         * Más estrecha que antes y un poco más alta.
-         */
+    function getGuideRect() {
 
         return {
 
@@ -132,31 +153,32 @@ window.VetLabCamera = (() => {
     }
 
 
-    function drawCurrentFrame() {
 
-        const width =
-            video.videoWidth;
+    function drawVideoFrame() {
 
-        const height =
-            video.videoHeight;
-
-
-        if (!width || !height) {
+        if (
+            !video ||
+            !video.videoWidth ||
+            !video.videoHeight
+        ) {
 
             return false;
         }
 
 
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width =
+            video.videoWidth;
+
+        canvas.height =
+            video.videoHeight;
 
 
-        ctx.drawImage(
+        context.drawImage(
             video,
             0,
             0,
-            width,
-            height
+            canvas.width,
+            canvas.height
         );
 
 
@@ -164,7 +186,8 @@ window.VetLabCamera = (() => {
     }
 
 
-    function getGuideCrop(sourceCanvas) {
+
+    function cropGuide(sourceCanvas) {
 
         const guide =
             getGuideRect();
@@ -176,17 +199,20 @@ window.VetLabCamera = (() => {
                 guide.x
             );
 
+
         const sy =
             Math.round(
                 sourceCanvas.height *
                 guide.y
             );
 
+
         const sw =
             Math.round(
                 sourceCanvas.width *
                 guide.width
             );
+
 
         const sh =
             Math.round(
@@ -195,19 +221,50 @@ window.VetLabCamera = (() => {
             );
 
 
-        const output =
-            document.createElement('canvas');
-
-
         /*
-         * Relación vertical semejante a la pantalla del Exigo.
+         * IMPORTANTE
+         *
+         * Conservamos la proporción original.
+         * No deformamos la pantalla.
          */
 
-        output.width = 900;
-        output.height = 1200;
+        const maximumWidth =
+            1100;
 
 
-        const outputCtx =
+        const scale =
+            Math.min(
+                1,
+                maximumWidth / sw
+            );
+
+
+        const outputWidth =
+            Math.round(
+                sw * scale
+            );
+
+
+        const outputHeight =
+            Math.round(
+                sh * scale
+            );
+
+
+        const output =
+            document.createElement(
+                'canvas'
+            );
+
+
+        output.width =
+            outputWidth;
+
+        output.height =
+            outputHeight;
+
+
+        const outputContext =
             output.getContext(
                 '2d',
                 {
@@ -216,7 +273,7 @@ window.VetLabCamera = (() => {
             );
 
 
-        outputCtx.drawImage(
+        outputContext.drawImage(
 
             sourceCanvas,
 
@@ -227,8 +284,8 @@ window.VetLabCamera = (() => {
 
             0,
             0,
-            output.width,
-            output.height
+            outputWidth,
+            outputHeight
         );
 
 
@@ -236,13 +293,18 @@ window.VetLabCamera = (() => {
     }
 
 
-    function calculateBrightness(imageData) {
+
+    function calculateBrightness(
+        imageData
+    ) {
 
         const data =
             imageData.data;
 
-        let sum = 0;
-        let count = 0;
+
+        let total = 0;
+
+        let samples = 0;
 
 
         for (
@@ -251,35 +313,37 @@ window.VetLabCamera = (() => {
             i += 40
         ) {
 
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
+            total +=
+
+                data[i] * 0.299 +
+
+                data[i + 1] * 0.587 +
+
+                data[i + 2] * 0.114;
 
 
-            const luminance =
-                0.299 * r +
-                0.587 * g +
-                0.114 * b;
-
-
-            sum += luminance;
-            count++;
+            samples++;
         }
 
 
-        return count
-            ? sum / count
+        return samples
+            ? total / samples
             : 0;
     }
 
 
-    function calculateGlare(imageData) {
+
+    function calculateGlare(
+        imageData
+    ) {
 
         const data =
             imageData.data;
 
-        let bright = 0;
-        let count = 0;
+
+        let glarePixels = 0;
+
+        let samples = 0;
 
 
         for (
@@ -288,29 +352,25 @@ window.VetLabCamera = (() => {
             i += 40
         ) {
 
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-
-
             if (
-                r > 248 &&
-                g > 248 &&
-                b > 248
+                data[i] > 248 &&
+                data[i + 1] > 248 &&
+                data[i + 2] > 248
             ) {
 
-                bright++;
+                glarePixels++;
             }
 
 
-            count++;
+            samples++;
         }
 
 
-        return count
-            ? bright / count
+        return samples
+            ? glarePixels / samples
             : 0;
     }
+
 
 
     function calculateSharpness(
@@ -322,10 +382,27 @@ window.VetLabCamera = (() => {
         const data =
             imageData.data;
 
+
         let total = 0;
-        let count = 0;
+
+        let samples = 0;
+
 
         const step = 4;
+
+
+        function gray(index) {
+
+            return (
+
+                data[index] +
+
+                data[index + 1] +
+
+                data[index + 2]
+
+            ) / 3;
+        }
 
 
         for (
@@ -340,18 +417,18 @@ window.VetLabCamera = (() => {
                 x += step
             ) {
 
-                const index =
+                const center =
                     (y * width + x) * 4;
 
 
-                const rightIndex =
+                const right =
                     (
                         y * width +
                         x + step
                     ) * 4;
 
 
-                const bottomIndex =
+                const bottom =
                     (
                         (y + step) *
                         width +
@@ -359,65 +436,68 @@ window.VetLabCamera = (() => {
                     ) * 4;
 
 
-                const current =
-                    (
-                        data[index] +
-                        data[index + 1] +
-                        data[index + 2]
-                    ) / 3;
-
-
-                const right =
-                    (
-                        data[rightIndex] +
-                        data[rightIndex + 1] +
-                        data[rightIndex + 2]
-                    ) / 3;
-
-
-                const bottom =
-                    (
-                        data[bottomIndex] +
-                        data[bottomIndex + 1] +
-                        data[bottomIndex + 2]
-                    ) / 3;
-
-
                 total +=
+
                     Math.abs(
-                        current - right
+                        gray(center) -
+                        gray(right)
                     ) +
+
                     Math.abs(
-                        current - bottom
+                        gray(center) -
+                        gray(bottom)
                     );
 
 
-                count++;
+                samples++;
             }
         }
 
 
-        return count
-            ? total / count
+        return samples
+            ? total / samples
             : 0;
     }
 
 
-    function analyzeCanvas(sourceCanvas) {
+
+    function analyzeCanvas(
+        sourceCanvas
+    ) {
 
         const crop =
-            getGuideCrop(sourceCanvas);
+            cropGuide(
+                sourceCanvas
+            );
 
 
         const analysis =
-            document.createElement('canvas');
+            document.createElement(
+                'canvas'
+            );
 
 
-        analysis.width = 300;
-        analysis.height = 400;
+        const analysisWidth =
+            280;
 
 
-        const analysisCtx =
+        const ratio =
+            crop.height /
+            crop.width;
+
+
+        analysis.width =
+            analysisWidth;
+
+
+        analysis.height =
+            Math.round(
+                analysisWidth *
+                ratio
+            );
+
+
+        const ctx =
             analysis.getContext(
                 '2d',
                 {
@@ -426,7 +506,7 @@ window.VetLabCamera = (() => {
             );
 
 
-        analysisCtx.drawImage(
+        ctx.drawImage(
             crop,
             0,
             0,
@@ -436,7 +516,7 @@ window.VetLabCamera = (() => {
 
 
         const imageData =
-            analysisCtx.getImageData(
+            ctx.getImageData(
                 0,
                 0,
                 analysis.width,
@@ -445,11 +525,15 @@ window.VetLabCamera = (() => {
 
 
         const brightness =
-            calculateBrightness(imageData);
+            calculateBrightness(
+                imageData
+            );
 
 
         const glare =
-            calculateGlare(imageData);
+            calculateGlare(
+                imageData
+            );
 
 
         const sharpness =
@@ -461,16 +545,24 @@ window.VetLabCamera = (() => {
 
 
         const lightGood =
-            brightness >= QUALITY_LIMITS.minBrightness &&
-            brightness <= QUALITY_LIMITS.maxBrightness;
+
+            brightness >=
+                LIMITS.minBrightness &&
+
+            brightness <=
+                LIMITS.maxBrightness;
 
 
         const glareGood =
-            glare <= QUALITY_LIMITS.maxGlare;
+
+            glare <=
+            LIMITS.maxGlare;
 
 
         const sharpnessGood =
-            sharpness >= QUALITY_LIMITS.minSharpness;
+
+            sharpness >=
+            LIMITS.minSharpness;
 
 
         const goodCount =
@@ -483,20 +575,30 @@ window.VetLabCamera = (() => {
                 .length;
 
 
-        const qualityLevel =
-            goodCount === 3
-                ? 'good'
-                : goodCount === 2
-                    ? 'acceptable'
-                    : 'poor';
+        let qualityLevel =
+            'poor';
+
+
+        if (goodCount === 3) {
+
+            qualityLevel =
+                'good';
+
+        } else if (
+            goodCount >= 2
+        ) {
+
+            qualityLevel =
+                'acceptable';
+        }
 
 
         return {
 
+            qualityLevel,
+
             acceptable:
                 qualityLevel !== 'poor',
-
-            qualityLevel,
 
             brightness,
 
@@ -521,27 +623,33 @@ window.VetLabCamera = (() => {
     }
 
 
+
     function analyzeCurrentFrame() {
 
-        if (!drawCurrentFrame()) {
+        if (
+            !drawVideoFrame()
+        ) {
 
             return null;
         }
 
 
-        lastQuality =
-            analyzeCanvas(canvas);
-
-
-        return lastQuality;
+        return analyzeCanvas(
+            canvas
+        );
     }
 
 
-    function startQualityMonitoring(callback) {
+
+    function startQualityMonitoring(
+        callback
+    ) {
 
         if (qualityTimer) {
 
-            clearInterval(qualityTimer);
+            clearInterval(
+                qualityTimer
+            );
         }
 
 
@@ -549,16 +657,18 @@ window.VetLabCamera = (() => {
             setInterval(
                 () => {
 
-                    const result =
+                    const quality =
                         analyzeCurrentFrame();
 
 
                     if (
-                        result &&
+                        quality &&
                         callback
                     ) {
 
-                        callback(result);
+                        callback(
+                            quality
+                        );
                     }
 
                 },
@@ -567,9 +677,12 @@ window.VetLabCamera = (() => {
     }
 
 
+
     function capture() {
 
-        if (!drawCurrentFrame()) {
+        if (
+            !drawVideoFrame()
+        ) {
 
             throw new Error(
                 'La cámara todavía no está lista.'
@@ -578,38 +691,40 @@ window.VetLabCamera = (() => {
 
 
         const quality =
-            analyzeCanvas(canvas);
-
-
-        const fullImage =
-            canvas.toDataURL(
-                'image/jpeg',
-                0.94
-            );
-
-
-        const normalized =
-            quality.crop.toDataURL(
-                'image/jpeg',
-                0.96
+            analyzeCanvas(
+                canvas
             );
 
 
         return {
 
-            fullImage,
+            fullImage:
+                canvas.toDataURL(
+                    'image/jpeg',
+                    0.95
+                ),
 
-            normalized,
+            normalized:
+                quality.crop.toDataURL(
+                    'image/jpeg',
+                    0.97
+                ),
 
             quality
         };
     }
 
 
-    function loadFile(file) {
+
+    function loadFile(
+        file
+    ) {
 
         return new Promise(
-            (resolve, reject) => {
+            (
+                resolve,
+                reject
+            ) => {
 
                 const reader =
                     new FileReader();
@@ -626,18 +741,23 @@ window.VetLabCamera = (() => {
                             () => {
 
                                 const source =
-                                    document.createElement('canvas');
+                                    document.createElement(
+                                        'canvas'
+                                    );
 
 
                                 source.width =
                                     image.naturalWidth;
+
 
                                 source.height =
                                     image.naturalHeight;
 
 
                                 source
-                                    .getContext('2d')
+                                    .getContext(
+                                        '2d'
+                                    )
                                     .drawImage(
                                         image,
                                         0,
@@ -646,7 +766,9 @@ window.VetLabCamera = (() => {
 
 
                                 const quality =
-                                    analyzeCanvas(source);
+                                    analyzeCanvas(
+                                        source
+                                    );
 
 
                                 resolve({
@@ -657,7 +779,7 @@ window.VetLabCamera = (() => {
                                     normalized:
                                         quality.crop.toDataURL(
                                             'image/jpeg',
-                                            0.96
+                                            0.97
                                         ),
 
                                     quality
@@ -666,12 +788,7 @@ window.VetLabCamera = (() => {
 
 
                         image.onerror =
-                            () =>
-                                reject(
-                                    new Error(
-                                        'No se pudo abrir la imagen.'
-                                    )
-                                );
+                            reject;
 
 
                         image.src =
@@ -680,18 +797,16 @@ window.VetLabCamera = (() => {
 
 
                 reader.onerror =
-                    () =>
-                        reject(
-                            new Error(
-                                'No se pudo leer el archivo.'
-                            )
-                        );
+                    reject;
 
 
-                reader.readAsDataURL(file);
+                reader.readAsDataURL(
+                    file
+                );
             }
         );
     }
+
 
 
     return {
@@ -705,8 +820,6 @@ window.VetLabCamera = (() => {
         loadFile,
 
         startQualityMonitoring,
-
-        analyzeCurrentFrame,
 
         getGuideRect
     };

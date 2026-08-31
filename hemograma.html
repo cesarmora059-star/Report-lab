@@ -12,17 +12,34 @@
 
     <meta name="theme-color" content="#071014">
 
-    <title>Capturar hemograma</title>
+    <title>Hemograma</title>
 
     <link rel="stylesheet" href="./css/style.css">
 
+    <!-- OCR -->
+    <script
+        defer
+        src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"
+    ></script>
+
+    <!-- Cámara -->
     <script defer src="./js/camara.js"></script>
+
+    <!-- NUEVO lector específico del Exigo -->
+    <script defer src="./js/exigo.js"></script>
+
+    <!-- Control general -->
     <script defer src="./js/hemograma.js"></script>
 
 </head>
 
 
 <body class="capture-page">
+
+
+<!-- =====================================================
+     CÁMARA
+===================================================== -->
 
 <div id="camera-app" class="camera-app">
 
@@ -53,6 +70,7 @@
             muted
         ></video>
 
+
         <canvas
             id="analysis-canvas"
             hidden
@@ -72,7 +90,8 @@
             </strong>
 
             <span>
-                Coloque las cuatro esquinas de la pantalla dentro de las guías
+                Coloque las cuatro esquinas de la pantalla
+                dentro de las guías
             </span>
 
         </div>
@@ -171,6 +190,11 @@
 </div>
 
 
+
+<!-- =====================================================
+     REVISIÓN DE FOTO
+===================================================== -->
+
 <section
     id="photo-review"
     class="photo-review"
@@ -202,17 +226,8 @@
 
             <img
                 id="captured-preview"
-                alt="Fotografía capturada del Exigo"
+                alt="Fotografía del Exigo"
             >
-
-            <div class="review-guide">
-
-                <div class="guide-corner corner-tl"></div>
-                <div class="guide-corner corner-tr"></div>
-                <div class="guide-corner corner-bl"></div>
-                <div class="guide-corner corner-br"></div>
-
-            </div>
 
         </div>
 
@@ -241,13 +256,18 @@
             class="button button-primary"
             type="button"
         >
-            Usar fotografía
+            Leer hemograma
         </button>
 
     </footer>
 
 </section>
 
+
+
+<!-- =====================================================
+     PROCESAMIENTO
+===================================================== -->
 
 <section
     id="processing-screen"
@@ -260,17 +280,32 @@
         <div class="spinner"></div>
 
         <h2>
-            Preparando lectura
+            Leyendo hemograma
         </h2>
 
         <p id="processing-message">
-            Normalizando fotografía…
+            Preparando imagen…
         </p>
+
+
+        <div class="processing-progress">
+
+            <div
+                id="processing-progress-bar"
+                class="processing-progress-bar"
+            ></div>
+
+        </div>
 
     </div>
 
 </section>
 
+
+
+<!-- =====================================================
+     CONFIRMACIÓN DE RESULTADOS
+===================================================== -->
 
 <section
     id="result-screen"
@@ -280,16 +315,25 @@
 
     <header class="simple-header">
 
-        <a
-            href="./index.html"
-            class="camera-back dark"
+        <button
+            id="back-to-camera"
+            class="camera-back dark button-reset"
+            type="button"
         >
             ‹
-        </a>
+        </button>
+
 
         <div>
-            <strong>Fotografía preparada</strong>
-            <span>Lista para OCR</span>
+
+            <strong>
+                Confirmar hemograma
+            </strong>
+
+            <span>
+                Revise antes de generar el reporte
+            </span>
+
         </div>
 
     </header>
@@ -297,42 +341,342 @@
 
     <main class="result-content">
 
-        <img
-            id="normalized-preview"
-            class="normalized-preview"
-            alt="Pantalla normalizada"
-        >
-
-
-        <div class="success-card">
-
-            <span class="success-icon">
-                ✓
-            </span>
+        <div class="recognition-summary">
 
             <div>
 
-                <strong>
-                    Captura aceptada
+                <span>
+                    Lectura
+                </span>
+
+                <strong id="recognition-status">
+                    Completada
                 </strong>
 
-                <p>
-                    La imagen fue recortada utilizando las guías
-                    y está lista para la lectura de resultados.
-                </p>
+            </div>
+
+
+            <div>
+
+                <span>
+                    Especie detectada
+                </span>
+
+                <strong id="detected-species">
+                    —
+                </strong>
 
             </div>
 
         </div>
 
 
-        <button
-            id="new-photo-button"
-            class="button button-secondary"
-            type="button"
-        >
-            Tomar otra fotografía
-        </button>
+        <details class="image-details">
+
+            <summary>
+                Ver imagen analizada
+            </summary>
+
+            <img
+                id="normalized-preview"
+                class="normalized-preview"
+                alt="Pantalla analizada"
+            >
+
+        </details>
+
+
+        <form id="confirmation-form">
+
+
+            <!-- DATOS -->
+
+            <section class="form-card">
+
+                <div class="form-card-title">
+
+                    <div>
+
+                        <h2>
+                            Datos del paciente
+                        </h2>
+
+                        <p>
+                            Confirme especialmente los nombres.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-grid">
+
+                    <label class="field">
+
+                        <span>
+                            Propietario
+                        </span>
+
+                        <input
+                            id="owner-input"
+                            type="text"
+                            autocomplete="off"
+                        >
+
+                    </label>
+
+
+                    <label class="field">
+
+                        <span>
+                            Paciente
+                        </span>
+
+                        <input
+                            id="patient-input"
+                            type="text"
+                            autocomplete="off"
+                            required
+                        >
+
+                    </label>
+
+
+                    <label class="field">
+
+                        <span>
+                            Especie
+                        </span>
+
+                        <select
+                            id="species-input"
+                            required
+                        >
+
+                            <option value="perro">
+                                Canino
+                            </option>
+
+                            <option value="gato">
+                                Felino
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <label class="field">
+
+                        <span>
+                            Edad
+                        </span>
+
+                        <input
+                            id="age-input"
+                            type="text"
+                            autocomplete="off"
+                        >
+
+                    </label>
+
+
+                    <label class="field">
+
+                        <span>
+                            Expediente
+                        </span>
+
+                        <input
+                            id="record-input"
+                            type="text"
+                            autocomplete="off"
+                        >
+
+                    </label>
+
+
+                    <label class="field">
+
+                        <span>
+                            Fecha
+                        </span>
+
+                        <input
+                            id="date-input"
+                            type="date"
+                            required
+                        >
+
+                    </label>
+
+
+                    <label class="field">
+
+                        <span>
+                            Médico veterinario
+                        </span>
+
+                        <input
+                            id="vet-input"
+                            type="text"
+                            autocomplete="off"
+                        >
+
+                    </label>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- CONTROL -->
+
+            <section class="form-card">
+
+                <div class="form-card-title">
+
+                    <div>
+
+                        <h2>
+                            Control de lectura
+                        </h2>
+
+                        <p>
+                            El sistema comprueba relaciones matemáticas
+                            del hemograma.
+                        </p>
+
+                    </div>
+
+
+                    <span
+                        id="validation-badge"
+                        class="validation-badge"
+                    >
+                        Revisando
+                    </span>
+
+                </div>
+
+
+                <div id="validation-messages">
+                </div>
+
+            </section>
+
+
+
+            <!-- RESULTADOS -->
+
+            <section class="form-card">
+
+                <div class="form-card-title">
+
+                    <div>
+
+                        <h2>
+                            Resultados
+                        </h2>
+
+                        <p>
+                            Todos los valores pueden editarse.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="results-table-wrap">
+
+                    <table class="results-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Parámetro
+                                </th>
+
+                                <th>
+                                    Resultado
+                                </th>
+
+                                <th>
+                                    Unidad
+                                </th>
+
+                                <th>
+                                    Referencia
+                                </th>
+
+                                <th>
+                                    Estado
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="results-body">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- OBSERVACIONES -->
+
+            <section class="form-card">
+
+                <label class="field">
+
+                    <span>
+                        Observaciones del laboratorio
+                    </span>
+
+                    <textarea
+                        id="notes-input"
+                        rows="4"
+                        maxlength="800"
+                        placeholder="Opcional"
+                    ></textarea>
+
+                </label>
+
+            </section>
+
+
+            <div class="confirmation-actions">
+
+                <button
+                    id="repeat-reading"
+                    class="button button-secondary"
+                    type="button"
+                >
+                    Repetir fotografía
+                </button>
+
+
+                <button
+                    class="button button-primary"
+                    type="submit"
+                >
+                    Generar reporte
+                </button>
+
+            </div>
+
+        </form>
 
     </main>
 

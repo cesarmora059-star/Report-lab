@@ -3,92 +3,275 @@
 
 document.addEventListener(
     'DOMContentLoaded',
-    iniciarAplicacion
+    start
 );
 
 
-async function iniciarAplicacion() {
+async function start() {
+
+
+    const $ =
+        selector =>
+            document.querySelector(
+                selector
+            );
+
 
     const cameraApp =
-        document.querySelector('#camera-app');
+        $('#camera-app');
+
 
     const video =
-        document.querySelector('#camera-video');
+        $('#camera-video');
+
 
     const canvas =
-        document.querySelector('#analysis-canvas');
+        $('#analysis-canvas');
+
 
     const captureButton =
-        document.querySelector('#capture-button');
+        $('#capture-button');
+
 
     const fileButton =
-        document.querySelector('#file-button');
+        $('#file-button');
+
 
     const fileInput =
-        document.querySelector('#file-input');
+        $('#file-input');
 
 
     const qualityDot =
-        document.querySelector('#quality-dot');
+        $('#quality-dot');
+
 
     const qualityTitle =
-        document.querySelector('#quality-title');
+        $('#quality-title');
+
 
     const qualityMessage =
-        document.querySelector('#quality-message');
+        $('#quality-message');
 
 
     const checkLight =
-        document.querySelector('#check-light');
+        $('#check-light');
+
 
     const checkSharpness =
-        document.querySelector('#check-sharpness');
+        $('#check-sharpness');
+
 
     const checkGlare =
-        document.querySelector('#check-glare');
+        $('#check-glare');
 
 
     const screenGuide =
-        document.querySelector('#screen-guide');
+        $('#screen-guide');
 
 
-    const review =
-        document.querySelector('#photo-review');
+    const photoReview =
+        $('#photo-review');
 
-    const preview =
-        document.querySelector('#captured-preview');
+
+    const capturedPreview =
+        $('#captured-preview');
+
 
     const finalQuality =
-        document.querySelector('#final-quality');
+        $('#final-quality');
+
 
     const cancelReview =
-        document.querySelector('#cancel-review');
+        $('#cancel-review');
+
 
     const retakeButton =
-        document.querySelector('#retake-button');
+        $('#retake-button');
+
 
     const usePhotoButton =
-        document.querySelector('#use-photo-button');
+        $('#use-photo-button');
 
 
     const processing =
-        document.querySelector('#processing-screen');
+        $('#processing-screen');
+
 
     const processingMessage =
-        document.querySelector('#processing-message');
+        $('#processing-message');
+
+
+    const processingBar =
+        $('#processing-progress-bar');
 
 
     const resultScreen =
-        document.querySelector('#result-screen');
+        $('#result-screen');
+
 
     const normalizedPreview =
-        document.querySelector('#normalized-preview');
-
-    const newPhotoButton =
-        document.querySelector('#new-photo-button');
+        $('#normalized-preview');
 
 
-    let currentCapture = null;
+    const backToCamera =
+        $('#back-to-camera');
+
+
+    const repeatReading =
+        $('#repeat-reading');
+
+
+    const confirmationForm =
+        $('#confirmation-form');
+
+
+    const ownerInput =
+        $('#owner-input');
+
+
+    const patientInput =
+        $('#patient-input');
+
+
+    const speciesInput =
+        $('#species-input');
+
+
+    const ageInput =
+        $('#age-input');
+
+
+    const recordInput =
+        $('#record-input');
+
+
+    const dateInput =
+        $('#date-input');
+
+
+    const vetInput =
+        $('#vet-input');
+
+
+    const notesInput =
+        $('#notes-input');
+
+
+    const detectedSpecies =
+        $('#detected-species');
+
+
+    const recognitionStatus =
+        $('#recognition-status');
+
+
+    const validationBadge =
+        $('#validation-badge');
+
+
+    const validationMessages =
+        $('#validation-messages');
+
+
+    const resultsBody =
+        $('#results-body');
+
+
+
+    let currentCapture =
+        null;
+
+
+    let currentReading =
+        null;
+
+
+
+    /* =====================================================
+       UTILIDADES
+    ===================================================== */
+
+    function today() {
+
+        const now =
+            new Date();
+
+
+        const offset =
+            now.getTimezoneOffset();
+
+
+        return new Date(
+            now.getTime() -
+            offset * 60000
+        )
+            .toISOString()
+            .slice(
+                0,
+                10
+            );
+    }
+
+
+
+    function reportNumber() {
+
+        const now =
+            new Date();
+
+
+        const two =
+            value =>
+                String(
+                    value
+                ).padStart(
+                    2,
+                    '0'
+                );
+
+
+        const base =
+
+            now.getFullYear() +
+
+            two(
+                now.getMonth() + 1
+            ) +
+
+            two(
+                now.getDate()
+            ) +
+
+            '-' +
+
+            two(
+                now.getHours()
+            ) +
+
+            two(
+                now.getMinutes()
+            ) +
+
+            two(
+                now.getSeconds()
+            );
+
+
+        const random =
+            Math.random()
+                .toString(36)
+                .slice(
+                    2,
+                    5
+                )
+                .toUpperCase();
+
+
+        return (
+            `${base}-${random}`
+        );
+    }
+
 
 
     function setCheck(
@@ -101,6 +284,7 @@ async function iniciarAplicacion() {
             good
         );
 
+
         element.classList.toggle(
             'bad',
             !good
@@ -108,37 +292,14 @@ async function iniciarAplicacion() {
     }
 
 
-    function updateGuideQuality(level) {
 
-        screenGuide.classList.remove(
-            'guide-good',
-            'guide-warning'
-        );
+    /* =====================================================
+       CALIDAD
+    ===================================================== */
 
-
-        if (level === 'good') {
-
-            screenGuide.classList.add(
-                'guide-good'
-            );
-
-        } else if (
-            level === 'acceptable'
-        ) {
-
-            screenGuide.classList.add(
-                'guide-warning'
-            );
-        }
-    }
-
-
-    function updateQuality(quality) {
-
-        if (!quality) {
-            return;
-        }
-
+    function updateQuality(
+        quality
+    ) {
 
         setCheck(
             checkLight,
@@ -158,82 +319,62 @@ async function iniciarAplicacion() {
         );
 
 
-        updateGuideQuality(
-            quality.qualityLevel
+        screenGuide.classList.remove(
+            'guide-good',
+            'guide-warning'
         );
 
 
         /*
-         * IMPORTANTE:
-         * El botón ya NO se bloquea.
+         * La captura nunca se bloquea
+         * por estas advertencias.
          */
 
-        captureButton.disabled = false;
+        captureButton.disabled =
+            false;
 
 
         if (
-            quality.qualityLevel === 'good'
+            quality.qualityLevel ===
+            'good'
         ) {
+
+            screenGuide
+                .classList
+                .add(
+                    'guide-good'
+                );
+
 
             qualityDot.className =
                 'quality-dot good';
 
+
             qualityTitle.textContent =
                 'Lista para capturar';
 
+
             qualityMessage.textContent =
-                'La calidad de imagen es buena';
+                'La imagen se ve adecuada';
+
 
             return;
         }
 
 
-        if (
-            quality.qualityLevel === 'acceptable'
-        ) {
-
-            qualityDot.className =
-                'quality-dot warning';
-
-            qualityTitle.textContent =
-                'Puede capturar';
-
-            if (
-                !quality.checks.sharpness
-            ) {
-
-                qualityMessage.textContent =
-                    'Mejore la nitidez si es posible';
-
-            } else if (
-                !quality.checks.glare
-            ) {
-
-                qualityMessage.textContent =
-                    'Evite un poco más el reflejo';
-
-            } else if (
-                !quality.checks.light
-            ) {
-
-                qualityMessage.textContent =
-                    'Ajuste ligeramente la iluminación';
-
-            } else {
-
-                qualityMessage.textContent =
-                    'La imagen es utilizable';
-            }
-
-            return;
-        }
+        screenGuide
+            .classList
+            .add(
+                'guide-warning'
+            );
 
 
         qualityDot.className =
             'quality-dot warning';
 
+
         qualityTitle.textContent =
-            'Puede capturar, pero recomendamos ajustar';
+            'Puede capturar';
 
 
         if (
@@ -241,62 +382,71 @@ async function iniciarAplicacion() {
         ) {
 
             qualityMessage.textContent =
-                'Mantenga el teléfono más firme';
+                'Mejore la nitidez si es posible';
 
-            return;
-        }
-
-
-        if (
+        } else if (
             !quality.checks.glare
         ) {
 
             qualityMessage.textContent =
-                'Cambie ligeramente el ángulo';
+                'Evite un poco más el reflejo';
 
-            return;
-        }
-
-
-        if (
+        } else if (
             !quality.checks.light
         ) {
 
             qualityMessage.textContent =
-                'La iluminación puede mejorar';
+                'Ajuste ligeramente la iluminación';
 
-            return;
+        } else {
+
+            qualityMessage.textContent =
+                'Confirme el encuadre';
         }
-
-
-        qualityMessage.textContent =
-            'Alinee mejor la pantalla';
     }
 
 
+
+    /* =====================================================
+       CÁMARA
+    ===================================================== */
+
     async function startCamera() {
 
-        cameraApp.hidden = false;
-        review.hidden = true;
-        processing.hidden = true;
-        resultScreen.hidden = true;
+        currentCapture =
+            null;
+
+
+        cameraApp.hidden =
+            false;
+
+
+        photoReview.hidden =
+            true;
+
+
+        processing.hidden =
+            true;
+
+
+        resultScreen.hidden =
+            true;
+
+
+        captureButton.disabled =
+            false;
 
 
         qualityDot.className =
             'quality-dot checking';
 
+
         qualityTitle.textContent =
             'Preparando cámara…';
 
+
         qualityMessage.textContent =
             'Un momento';
-
-
-        /*
-         * Botón activo desde el inicio.
-         */
-
-        captureButton.disabled = false;
 
 
         try {
@@ -310,6 +460,7 @@ async function iniciarAplicacion() {
             qualityTitle.textContent =
                 'Alinee la pantalla';
 
+
             qualityMessage.textContent =
                 'Use las cuatro esquinas como guía';
 
@@ -322,17 +473,21 @@ async function iniciarAplicacion() {
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                error
+            );
 
 
             qualityDot.className =
                 'quality-dot warning';
 
+
             qualityTitle.textContent =
                 'No se pudo abrir la cámara';
 
+
             qualityMessage.textContent =
-                'Puede seleccionar una fotografía';
+                'Seleccione una fotografía desde Fotos';
 
 
             captureButton.disabled =
@@ -341,7 +496,14 @@ async function iniciarAplicacion() {
     }
 
 
-    function showReview(capture) {
+
+    /* =====================================================
+       REVISIÓN
+    ===================================================== */
+
+    function showPhotoReview(
+        capture
+    ) {
 
         currentCapture =
             capture;
@@ -350,25 +512,31 @@ async function iniciarAplicacion() {
         VetLabCamera.stop();
 
 
-        cameraApp.hidden = true;
-        review.hidden = false;
-        processing.hidden = true;
-        resultScreen.hidden = true;
+        cameraApp.hidden =
+            true;
 
 
-        preview.src =
+        photoReview.hidden =
+            false;
+
+
+        processing.hidden =
+            true;
+
+
+        resultScreen.hidden =
+            true;
+
+
+        capturedPreview.src =
             capture.fullImage;
-
-
-        const quality =
-            capture.quality;
 
 
         const problems = [];
 
 
         if (
-            !quality.checks.light
+            !capture.quality.checks.light
         ) {
 
             problems.push(
@@ -378,7 +546,7 @@ async function iniciarAplicacion() {
 
 
         if (
-            !quality.checks.sharpness
+            !capture.quality.checks.sharpness
         ) {
 
             problems.push(
@@ -388,7 +556,7 @@ async function iniciarAplicacion() {
 
 
         if (
-            !quality.checks.glare
+            !capture.quality.checks.glare
         ) {
 
             problems.push(
@@ -397,68 +565,51 @@ async function iniciarAplicacion() {
         }
 
 
-        /*
-         * Siempre permitimos usar la fotografía.
-         */
-
-        usePhotoButton.disabled = false;
-
-
         if (
-            quality.qualityLevel === 'good'
+            capture.quality.qualityLevel ===
+            'good'
         ) {
 
             finalQuality.className =
                 'final-quality good';
 
+
             finalQuality.innerHTML = `
-                <strong>✓ Buena fotografía</strong>
+
+                <strong>
+                    ✓ Buena fotografía
+                </strong>
+
                 <span>
-                    La calidad es adecuada para intentar la lectura.
-                    Confirme que toda la pantalla esté dentro de las guías.
+                    Confirme que toda la pantalla del Exigo
+                    esté visible antes de continuar.
                 </span>
             `;
 
-            return;
-        }
-
-
-        if (
-            quality.qualityLevel === 'acceptable'
-        ) {
+        } else {
 
             finalQuality.className =
                 'final-quality warning';
 
+
             finalQuality.innerHTML = `
-                <strong>⚠ Fotografía utilizable</strong>
+
+                <strong>
+                    ⚠ Fotografía utilizable
+                </strong>
+
                 <span>
                     Puede continuar.
-                    ${problems.length
-                        ? `Sería mejor mejorar: ${problems.join(', ')}.`
-                        : ''
+                    ${
+                        problems.length
+                            ? `Podría mejorar: ${problems.join(', ')}.`
+                            : ''
                     }
                 </span>
             `;
-
-            return;
         }
-
-
-        finalQuality.className =
-            'final-quality warning';
-
-        finalQuality.innerHTML = `
-            <strong>⚠ Recomendamos repetirla</strong>
-            <span>
-                Puede usarla si lo desea, pero detectamos:
-                ${problems.length
-                    ? problems.join(', ')
-                    : 'calidad limitada'
-                }.
-            </span>
-        `;
     }
+
 
 
     captureButton.addEventListener(
@@ -467,21 +618,19 @@ async function iniciarAplicacion() {
 
             try {
 
-                const capture =
-                    VetLabCamera.capture();
-
-                showReview(capture);
+                showPhotoReview(
+                    VetLabCamera.capture()
+                );
 
             } catch (error) {
 
-                console.error(error);
-
-                alert(
-                    'No se pudo tomar la fotografía.'
+                console.error(
+                    error
                 );
             }
         }
     );
+
 
 
     fileButton.addEventListener(
@@ -493,6 +642,7 @@ async function iniciarAplicacion() {
     );
 
 
+
     fileInput.addEventListener(
         'change',
         async () => {
@@ -502,6 +652,7 @@ async function iniciarAplicacion() {
 
 
             if (!file) {
+
                 return;
             }
 
@@ -513,113 +664,844 @@ async function iniciarAplicacion() {
                         file
                     );
 
-                showReview(capture);
+
+                showPhotoReview(
+                    capture
+                );
 
             } catch (error) {
 
-                console.error(error);
+                console.error(
+                    error
+                );
+
 
                 alert(
-                    'No se pudo procesar la fotografía.'
+                    'No se pudo abrir la fotografía.'
                 );
             }
 
 
-            fileInput.value = '';
+            fileInput.value =
+                '';
         }
     );
 
 
-    async function retake() {
-
-        currentCapture = null;
-
-        await startCamera();
-    }
-
 
     cancelReview.addEventListener(
         'click',
-        retake
+        startCamera
     );
+
 
 
     retakeButton.addEventListener(
         'click',
-        retake
+        startCamera
     );
 
 
-    newPhotoButton.addEventListener(
+
+    backToCamera.addEventListener(
         'click',
-        retake
+        startCamera
     );
 
+
+
+    repeatReading.addEventListener(
+        'click',
+        startCamera
+    );
+
+
+
+    /* =====================================================
+       PROGRESO OCR
+    ===================================================== */
+
+    function showProgress(
+        data
+    ) {
+
+        let percent = 0;
+
+
+        switch (
+            data.stage
+        ) {
+
+            case 'image':
+
+                processingMessage.textContent =
+                    'Preparando fotografía…';
+
+                percent =
+                    5;
+
+                break;
+
+
+            case 'ocr':
+
+                processingMessage.textContent =
+                    'Iniciando lector…';
+
+                percent =
+                    12;
+
+                break;
+
+
+            case 'species':
+
+                processingMessage.textContent =
+                    'Detectando perro o gato…';
+
+                percent =
+                    18;
+
+                break;
+
+
+            case 'identity':
+
+                processingMessage.textContent =
+                    'Leyendo paciente y propietario…';
+
+                percent =
+                    28;
+
+                break;
+
+
+            case 'parameter':
+
+                processingMessage.textContent =
+                    `Leyendo ${data.name}…`;
+
+
+                percent =
+
+                    30 +
+
+                    (
+                        data.current /
+                        data.total
+                    ) *
+
+                    65;
+
+                break;
+        }
+
+
+        processingBar.style.width =
+            `${Math.min(
+                100,
+                percent
+            )}%`;
+    }
+
+
+
+    /* =====================================================
+       LEER
+    ===================================================== */
 
     usePhotoButton.addEventListener(
         'click',
         async () => {
 
-            if (!currentCapture) {
+            if (
+                !currentCapture
+            ) {
 
                 return;
             }
 
 
-            review.hidden = true;
-            processing.hidden = false;
+            photoReview.hidden =
+                true;
 
 
-            processingMessage.textContent =
-                'Normalizando pantalla del Exigo…';
+            processing.hidden =
+                false;
 
 
-            await new Promise(
-                resolve =>
-                    setTimeout(
-                        resolve,
-                        250
-                    )
-            );
+            processingBar.style.width =
+                '2%';
 
 
             try {
 
-                sessionStorage.setItem(
-                    'vetlab_exigo_image',
-                    currentCapture.normalized
+                currentReading =
+                    await ExigoReader.read(
+
+                        currentCapture.normalized,
+
+                        showProgress
+                    );
+
+
+                processingBar.style.width =
+                    '100%';
+
+
+                normalizedPreview.src =
+                    currentCapture.normalized;
+
+
+                renderReading(
+                    currentReading
                 );
+
+
+                await new Promise(
+                    resolve =>
+                        setTimeout(
+                            resolve,
+                            250
+                        )
+                );
+
+
+                processing.hidden =
+                    true;
+
+
+                resultScreen.hidden =
+                    false;
+
 
             } catch (error) {
 
-                console.warn(
-                    'La imagen es demasiado grande para sessionStorage.',
+                console.error(
                     error
                 );
+
+
+                processing.hidden =
+                    true;
+
+
+                photoReview.hidden =
+                    false;
+
+
+                alert(
+                    error.message ||
+                    'No se pudo leer el hemograma.'
+                );
             }
+        }
+    );
 
 
-            processingMessage.textContent =
-                'Captura preparada';
+
+    /* =====================================================
+       RESULTADOS
+    ===================================================== */
+
+    function statusText(
+        status
+    ) {
+
+        if (
+            status === 'ALTO'
+        ) {
+
+            return '↑ Alto';
+        }
 
 
-            await new Promise(
-                resolve =>
-                    setTimeout(
-                        resolve,
-                        350
-                    )
+        if (
+            status === 'BAJO'
+        ) {
+
+            return '↓ Bajo';
+        }
+
+
+        if (
+            status === 'NORMAL'
+        ) {
+
+            return 'Normal';
+        }
+
+
+        return 'Revisar';
+    }
+
+
+
+    function referenceText(
+        parameter
+    ) {
+
+        const decimals =
+            parameter.decimals;
+
+
+        const min =
+            decimals
+                ? Number(
+                    parameter.min
+                ).toFixed(
+                    decimals
+                )
+                : parameter.min;
+
+
+        const max =
+            decimals
+                ? Number(
+                    parameter.max
+                ).toFixed(
+                    decimals
+                )
+                : parameter.max;
+
+
+        return (
+            `${min} – ${max}`
+        );
+    }
+
+
+
+    function createResultsTable(
+        parameters
+    ) {
+
+        resultsBody.innerHTML =
+            '';
+
+
+        parameters.forEach(
+            parameter => {
+
+                const status =
+                    ExigoReader.statusFor(
+                        parameter.value,
+                        parameter
+                    );
+
+
+                const row =
+                    document.createElement(
+                        'tr'
+                    );
+
+
+                if (
+                    !parameter.value ||
+                    parameter.confidence < 50
+                ) {
+
+                    row.classList.add(
+                        'needs-review'
+                    );
+                }
+
+
+                row.innerHTML = `
+
+                    <th>
+                        ${parameter.name}
+                    </th>
+
+                    <td>
+
+                        <input
+                            class="result-input"
+                            data-parameter="${parameter.id}"
+                            inputmode="decimal"
+                            value="${parameter.value || ''}"
+                            required
+                        >
+
+                        <small>
+                            ${
+                                parameter.confidence
+                                    ? `OCR ${Math.round(parameter.confidence)}%`
+                                    : 'Confirmar'
+                            }
+                        </small>
+
+                    </td>
+
+                    <td>
+                        ${parameter.unit}
+                    </td>
+
+                    <td>
+                        ${referenceText(parameter)}
+                    </td>
+
+                    <td>
+
+                        <span
+                            class="result-status ${status.toLowerCase()}"
+                            data-status="${parameter.id}"
+                        >
+                            ${statusText(status)}
+                        </span>
+
+                    </td>
+                `;
+
+
+                resultsBody.appendChild(
+                    row
+                );
+            }
+        );
+
+
+        document
+            .querySelectorAll(
+                '.result-input'
+            )
+            .forEach(
+                input => {
+
+                    input.addEventListener(
+                        'input',
+                        () => {
+
+                            updateResultStatus(
+                                input.dataset.parameter
+                            );
+
+
+                            updateValidation();
+                        }
+                    );
+                }
+            );
+    }
+
+
+
+    function getCurrentParameters() {
+
+        const config =
+            ExigoReader.getConfig(
+                speciesInput.value
             );
 
 
-            normalizedPreview.src =
-                currentCapture.normalized;
+        return config.parameters.map(
+            parameter => {
+
+                const input =
+                    document.querySelector(
+                        `[data-parameter="${parameter.id}"]`
+                    );
 
 
-            processing.hidden = true;
-            resultScreen.hidden = false;
+                return {
+
+                    ...parameter,
+
+                    value:
+                        input
+                            ? input.value.trim()
+                            : '',
+
+                    confidence:
+                        100
+                };
+            }
+        );
+    }
+
+
+
+    function updateResultStatus(
+        id
+    ) {
+
+        const config =
+            ExigoReader.getConfig(
+                speciesInput.value
+            );
+
+
+        const parameter =
+            config.parameters.find(
+                item =>
+                    item.id === id
+            );
+
+
+        if (!parameter) {
+
+            return;
+        }
+
+
+        const input =
+            document.querySelector(
+                `[data-parameter="${id}"]`
+            );
+
+
+        const badge =
+            document.querySelector(
+                `[data-status="${id}"]`
+            );
+
+
+        const status =
+            ExigoReader.statusFor(
+                input.value,
+                parameter
+            );
+
+
+        badge.className =
+            `result-status ${status.toLowerCase()}`;
+
+
+        badge.textContent =
+            statusText(
+                status
+            );
+    }
+
+
+
+    /* =====================================================
+       VALIDACIÓN
+    ===================================================== */
+
+    function updateValidation() {
+
+        const parameters =
+            getCurrentParameters();
+
+
+        const messages =
+            ExigoReader.validate(
+                speciesInput.value,
+                parameters
+            );
+
+
+        validationMessages.innerHTML =
+            '';
+
+
+        if (
+            !messages.length
+        ) {
+
+            validationBadge.className =
+                'validation-badge good';
+
+
+            validationBadge.textContent =
+                'Coherente';
+
+
+            validationMessages.innerHTML = `
+
+                <div class="validation-message good">
+
+                    ✓ Las principales relaciones
+                    matemáticas del hemograma son coherentes.
+
+                </div>
+            `;
+
+
+            return;
+        }
+
+
+        const errors =
+            messages.filter(
+                message =>
+                    message.type ===
+                    'error'
+            );
+
+
+        validationBadge.className =
+            errors.length
+                ? 'validation-badge error'
+                : 'validation-badge warning';
+
+
+        validationBadge.textContent =
+            `${messages.length} por revisar`;
+
+
+        messages.forEach(
+            message => {
+
+                const div =
+                    document.createElement(
+                        'div'
+                    );
+
+
+                div.className =
+                    `validation-message ${message.type}`;
+
+
+                div.textContent =
+                    message.text;
+
+
+                validationMessages.appendChild(
+                    div
+                );
+            }
+        );
+    }
+
+
+
+    /* =====================================================
+       RENDER
+    ===================================================== */
+
+    function renderReading(
+        reading
+    ) {
+
+        ownerInput.value =
+            reading.identity.owner;
+
+
+        patientInput.value =
+            reading.identity.patient;
+
+
+        speciesInput.value =
+            reading.species;
+
+
+        detectedSpecies.textContent =
+            reading.speciesDetected
+                ? reading.config.label
+                : 'Confirmar manualmente';
+
+
+        recognitionStatus.textContent =
+            reading.speciesDetected
+                ? 'Lectura completada'
+                : 'Revisión necesaria';
+
+
+        createResultsTable(
+            reading.parameters
+        );
+
+
+        dateInput.value =
+            today();
+
+
+        updateValidation();
+    }
+
+
+
+    /* =====================================================
+       CAMBIO MANUAL DE ESPECIE
+    ===================================================== */
+
+    speciesInput.addEventListener(
+        'change',
+        () => {
+
+            const config =
+                ExigoReader.getConfig(
+                    speciesInput.value
+                );
+
+
+            createResultsTable(
+                config.parameters.map(
+                    parameter => ({
+                        ...parameter,
+                        value: '',
+                        confidence: 0
+                    })
+                )
+            );
+
+
+            detectedSpecies.textContent =
+                config.label;
+
+
+            updateValidation();
         }
     );
+
+
+
+    /* =====================================================
+       GUARDAR PARA REPORTE
+    ===================================================== */
+
+    confirmationForm.addEventListener(
+        'submit',
+        event => {
+
+            event.preventDefault();
+
+
+            const parameters =
+                getCurrentParameters();
+
+
+            const validations =
+                ExigoReader.validate(
+                    speciesInput.value,
+                    parameters
+                );
+
+
+            const missing =
+                validations.some(
+                    message =>
+                        message.type ===
+                        'error'
+                );
+
+
+            if (missing) {
+
+                updateValidation();
+
+
+                alert(
+                    'Hay valores que todavía necesitan confirmarse.'
+                );
+
+
+                return;
+            }
+
+
+            const rows =
+                parameters.map(
+                    parameter => {
+
+                        const status =
+                            ExigoReader.statusFor(
+                                parameter.value,
+                                parameter
+                            );
+
+
+                        return {
+
+                            id:
+                                parameter.id,
+
+                            parametro:
+                                parameter.name,
+
+                            resultado:
+                                parameter.value,
+
+                            unidad:
+                                parameter.unit,
+
+                            minimo:
+                                parameter.min,
+
+                            maximo:
+                                parameter.max,
+
+                            referencia:
+                                referenceText(
+                                    parameter
+                                ),
+
+                            estado:
+                                status
+                        };
+                    }
+                );
+
+
+            const report = {
+
+                propietario:
+                    ExigoReader.normalizeName(
+                        ownerInput.value
+                    ),
+
+                paciente:
+                    ExigoReader.normalizeName(
+                        patientInput.value
+                    ),
+
+                especie:
+                    speciesInput.value,
+
+                edad:
+                    ageInput.value.trim(),
+
+                expediente:
+                    recordInput.value.trim(),
+
+                veterinario:
+                    ExigoReader.normalizeName(
+                        vetInput.value
+                    ),
+
+                fecha:
+                    dateInput.value,
+
+                reporte:
+                    reportNumber(),
+
+                observaciones:
+                    notesInput.value
+                        .trim()
+                        .slice(
+                            0,
+                            800
+                        ),
+
+                equipo:
+                    'Exigo H400',
+
+                controlCalidad:
+                    validations.map(
+                        item =>
+                            item.text
+                    ),
+
+                filas:
+                    rows
+            };
+
+
+            sessionStorage.setItem(
+                'vetlab_ultimo_reporte',
+                JSON.stringify(
+                    report
+                )
+            );
+
+
+            window.location.href =
+                './reporte.html';
+        }
+    );
+
 
 
     await startCamera();
