@@ -1,396 +1,401 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-  >
+    <meta charset="UTF-8">
 
-  <meta name="theme-color" content="#177997">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
 
-  <title>Nuevo hemograma</title>
+    <meta name="theme-color" content="#071014">
 
-  <link rel="stylesheet" href="./css/style.css">
+    <title>Capturar hemograma</title>
 
-  <!-- OCR -->
-  <script
-    defer
-    src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js">
-  </script>
+    <link rel="stylesheet" href="./css/style.css">
 
-  <!-- Configuración DOG / CAT -->
-  <script defer src="./js/config.js"></script>
+    <script defer src="./js/camara.js"></script>
+    <script defer src="./js/hemograma.js"></script>
 
-  <!-- Lógica principal -->
-  <script defer src="./js/hemograma.js"></script>
 </head>
 
-<body>
 
-<header class="header">
-  <div>
-    <h1>VetLabAssistant</h1>
-    <p>Lectura de hemogramas Exigo</p>
-  </div>
-</header>
+<body class="capture-page">
 
-<main class="container">
+<div id="camera-app" class="camera-app">
 
-  <div class="page-header">
+    <!-- ==================================================
+         CABECERA
+    =================================================== -->
 
-    <a href="./index.html" class="back">
-      ← Volver
-    </a>
+    <header class="camera-header">
 
-    <h2>Nuevo hemograma</h2>
+        <a
+            href="./index.html"
+            class="camera-back"
+            aria-label="Volver"
+        >
+            ‹
+        </a>
 
-    <p>
-      Tome una fotografía completa y lo más recta posible
-      de la pantalla del analizador.
-    </p>
-
-  </div>
-
-
-  <!-- CAPTURA -->
-  <section class="capture-card">
-
-    <label class="capture-zone" for="imagen">
-
-      <span class="camera-icon">📷</span>
-
-      <strong>Tomar fotografía del Exigo</strong>
-
-      <span>
-        Mantenga toda la pantalla visible y evite reflejos intensos.
-      </span>
-
-      <input
-        id="imagen"
-        type="file"
-        accept="image/*"
-        capture="environment"
-      >
-
-    </label>
-
-
-    <img
-      id="vista-previa"
-      class="image-preview"
-      alt="Fotografía del analizador"
-      hidden
-    >
-
-
-    <button
-      id="leer-imagen"
-      class="primary-button"
-      type="button"
-      disabled
-    >
-      Leer resultados
-    </button>
-
-
-    <div
-      id="estado-ocr"
-      class="status-box"
-      aria-live="polite"
-      hidden>
-    </div>
-
-  </section>
-
-
-  <!-- FORMULARIO DE CONFIRMACIÓN -->
-  <form id="form-reporte" hidden>
-
-    <section class="form-section">
-
-      <div class="section-heading">
-
-        <div>
-          <h3>Confirmación de datos</h3>
-
-          <p>
-            Revise la información detectada antes de generar
-            el reporte definitivo.
-          </p>
-        </div>
-
-        <span class="review-badge">
-          Revisión obligatoria
-        </span>
-
-      </div>
-
-
-      <div class="form-grid">
-
-        <div class="form-group">
-
-          <label for="propietario">
-            Propietario
-          </label>
-
-          <input
-            id="propietario"
-            name="propietario"
-            autocomplete="off"
-          >
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label for="paciente">
-            Paciente
-          </label>
-
-          <input
-            id="paciente"
-            name="paciente"
-            autocomplete="off"
-            required
-          >
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label for="especie">
-            Especie
-          </label>
-
-          <select
-            id="especie"
-            name="especie"
-            required
-          >
-
-            <option value="">
-              Confirmar especie
-            </option>
-
-            <option value="perro">
-              Canino
-            </option>
-
-            <option value="gato">
-              Felino
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label for="edad">
-            Edad
-          </label>
-
-          <input
-            id="edad"
-            name="edad"
-            autocomplete="off"
-          >
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label for="expediente">
-            Expediente
-          </label>
-
-          <input
-            id="expediente"
-            name="expediente"
-            autocomplete="off"
-          >
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label for="veterinario">
-            Médico veterinario
-          </label>
-
-          <input
-            id="veterinario"
-            name="veterinario"
-            value="Gabriela Quesada Víquez"
-          >
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label for="fecha">
-            Fecha
-          </label>
-
-          <input
-            id="fecha"
-            name="fecha"
-            type="date"
-            required
-          >
-
-        </div>
-
-
-        <div class="form-group">
-
-          <label for="numero_reporte">
-            Número de reporte
-          </label>
-
-          <input
-            id="numero_reporte"
-            name="numero_reporte"
-            readonly
-          >
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- CONTROL DE CALIDAD -->
-    <section
-      id="control-calidad"
-      class="form-section quality-section"
-    >
-
-      <div class="section-heading">
 
         <div>
 
-          <h3>Control de lectura</h3>
+            <strong>
+                Capturar hemograma
+            </strong>
 
-          <p>
-            El sistema revisa coherencia matemática
-            y confianza del OCR.
-          </p>
-
-        </div>
-
-        <span
-          id="calidad-general"
-          class="quality-badge">
-          Pendiente
-        </span>
-
-      </div>
-
-
-      <div id="avisos-calidad"></div>
-
-    </section>
-
-
-    <!-- RESULTADOS -->
-    <section class="form-section">
-
-      <div class="section-heading">
-
-        <div>
-
-          <h3>Resultados</h3>
-
-          <p>
-            Puede corregir cualquier valor leído incorrectamente.
-            El estado Alto/Bajo se calcula automáticamente.
-          </p>
+            <span>
+                Exigo
+            </span>
 
         </div>
 
-      </div>
+    </header>
 
 
-      <div class="table-wrap">
+    <!-- ==================================================
+         CÁMARA
+    =================================================== -->
 
-        <table class="edit-table">
+    <main class="camera-stage">
 
-          <thead>
-
-            <tr>
-              <th>Parámetro</th>
-              <th>Resultado</th>
-              <th>Unidad</th>
-              <th>Referencia</th>
-              <th>Estado</th>
-            </tr>
-
-          </thead>
+        <video
+            id="camera-video"
+            autoplay
+            playsinline
+            muted
+        ></video>
 
 
-          <tbody id="filas-resultados">
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </section>
+        <canvas
+            id="analysis-canvas"
+            hidden
+        ></canvas>
 
 
-    <!-- OBSERVACIONES -->
-    <section class="form-section">
+        <!-- Oscurecimiento exterior -->
 
-      <div class="form-group">
-
-        <label for="observaciones">
-          Observaciones del laboratorio
-        </label>
-
-        <textarea
-          id="observaciones"
-          name="observaciones"
-          rows="4"
-          maxlength="800"
-          placeholder="Observaciones opcionales...">
-        </textarea>
-
-      </div>
-
-    </section>
+        <div class="camera-shade camera-shade-top"></div>
+        <div class="camera-shade camera-shade-bottom"></div>
+        <div class="camera-shade camera-shade-left"></div>
+        <div class="camera-shade camera-shade-right"></div>
 
 
-    <div class="form-actions">
+        <!-- ==================================================
+             GUÍA
+        =================================================== -->
 
-      <button
-        class="secondary-button"
-        id="volver-leer"
-        type="button">
-        Cambiar fotografía
-      </button>
+        <div id="screen-guide" class="screen-guide">
 
-      <button
-        class="primary-button"
-        type="submit">
-        Revisar reporte
-      </button>
+            <div class="guide-corner corner-tl"></div>
+            <div class="guide-corner corner-tr"></div>
+            <div class="guide-corner corner-bl"></div>
+            <div class="guide-corner corner-br"></div>
+
+
+            <div class="guide-center">
+
+                <strong>
+                    Alinee la pantalla
+                </strong>
+
+                <span>
+                    Coloque las cuatro esquinas de la
+                    pantalla del Exigo dentro de las guías
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- ==================================================
+             ESTADO DE CALIDAD
+        =================================================== -->
+
+        <div class="quality-panel">
+
+            <div class="quality-main">
+
+                <span
+                    id="quality-dot"
+                    class="quality-dot checking"
+                ></span>
+
+                <div>
+
+                    <strong id="quality-title">
+                        Preparando cámara…
+                    </strong>
+
+                    <span id="quality-message">
+                        Un momento
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="quality-details">
+
+                <span
+                    id="check-light"
+                    class="mini-check"
+                >
+                    Luz
+                </span>
+
+                <span
+                    id="check-sharpness"
+                    class="mini-check"
+                >
+                    Nitidez
+                </span>
+
+                <span
+                    id="check-glare"
+                    class="mini-check"
+                >
+                    Reflejo
+                </span>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- ==================================================
+         CONTROLES
+    =================================================== -->
+
+    <footer class="camera-controls">
+
+        <div class="capture-help">
+            Mantenga el teléfono firme
+        </div>
+
+
+        <button
+            id="capture-button"
+            class="shutter-button"
+            type="button"
+            disabled
+            aria-label="Tomar fotografía"
+        >
+            <span></span>
+        </button>
+
+
+        <button
+            id="file-button"
+            class="gallery-button"
+            type="button"
+        >
+            Fotos
+        </button>
+
+
+        <input
+            id="file-input"
+            type="file"
+            accept="image/*"
+            hidden
+        >
+
+    </footer>
+
+</div>
+
+
+<!-- ======================================================
+     REVISIÓN DE LA FOTO
+======================================================= -->
+
+<section
+    id="photo-review"
+    class="photo-review"
+    hidden
+>
+
+    <header class="review-header">
+
+        <button
+            id="cancel-review"
+            class="text-button"
+            type="button"
+        >
+            Repetir
+        </button>
+
+
+        <strong>
+            Revisar fotografía
+        </strong>
+
+
+        <span class="header-spacer"></span>
+
+    </header>
+
+
+    <main class="review-stage">
+
+        <div class="review-image-wrap">
+
+            <img
+                id="captured-preview"
+                alt="Fotografía capturada del Exigo"
+            >
+
+
+            <div class="review-guide">
+
+                <div class="guide-corner corner-tl"></div>
+                <div class="guide-corner corner-tr"></div>
+                <div class="guide-corner corner-bl"></div>
+                <div class="guide-corner corner-br"></div>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="final-quality"
+            class="final-quality"
+        ></div>
+
+    </main>
+
+
+    <footer class="review-actions">
+
+        <button
+            id="retake-button"
+            class="button button-secondary"
+            type="button"
+        >
+            Repetir
+        </button>
+
+
+        <button
+            id="use-photo-button"
+            class="button button-primary"
+            type="button"
+            disabled
+        >
+            Usar fotografía
+        </button>
+
+    </footer>
+
+</section>
+
+
+<!-- ======================================================
+     PROCESANDO
+======================================================= -->
+
+<section
+    id="processing-screen"
+    class="processing-screen"
+    hidden
+>
+
+    <div class="processing-card">
+
+        <div class="spinner"></div>
+
+        <h2>
+            Preparando lectura
+        </h2>
+
+        <p id="processing-message">
+            Normalizando fotografía…
+        </p>
 
     </div>
 
-  </form>
+</section>
 
-</main>
+
+<!-- ======================================================
+     RESULTADO TEMPORAL
+======================================================= -->
+
+<section
+    id="result-screen"
+    class="result-screen"
+    hidden
+>
+
+    <header class="simple-header">
+
+        <a
+            href="./index.html"
+            class="camera-back dark"
+        >
+            ‹
+        </a>
+
+        <div>
+            <strong>Fotografía preparada</strong>
+            <span>Lista para OCR</span>
+        </div>
+
+    </header>
+
+
+    <main class="result-content">
+
+        <img
+            id="normalized-preview"
+            class="normalized-preview"
+            alt="Pantalla normalizada"
+        >
+
+
+        <div class="success-card">
+
+            <span class="success-icon">
+                ✓
+            </span>
+
+            <div>
+
+                <strong>
+                    Captura aceptada
+                </strong>
+
+                <p>
+                    La imagen fue recortada utilizando
+                    las guías y está lista para la
+                    lectura de resultados.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <button
+            id="new-photo-button"
+            class="button button-secondary"
+            type="button"
+        >
+            Tomar otra fotografía
+        </button>
+
+    </main>
+
+</section>
 
 </body>
 </html>
