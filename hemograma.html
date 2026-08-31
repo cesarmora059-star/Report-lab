@@ -26,10 +26,6 @@
 
 <div id="camera-app" class="camera-app">
 
-    <!-- ==================================================
-         CABECERA
-    =================================================== -->
-
     <header class="camera-header">
 
         <a
@@ -40,25 +36,13 @@
             ‹
         </a>
 
-
         <div>
-
-            <strong>
-                Capturar hemograma
-            </strong>
-
-            <span>
-                Exigo
-            </span>
-
+            <strong>Capturar hemograma</strong>
+            <span>Exigo</span>
         </div>
 
     </header>
 
-
-    <!-- ==================================================
-         CÁMARA
-    =================================================== -->
 
     <main class="camera-stage">
 
@@ -69,14 +53,11 @@
             muted
         ></video>
 
-
         <canvas
             id="analysis-canvas"
             hidden
         ></canvas>
 
-
-        <!-- Oscurecimiento exterior -->
 
         <div class="camera-shade camera-shade-top"></div>
         <div class="camera-shade camera-shade-bottom"></div>
@@ -84,9 +65,18 @@
         <div class="camera-shade camera-shade-right"></div>
 
 
-        <!-- ==================================================
-             GUÍA
-        =================================================== -->
+        <div class="guide-instructions">
+
+            <strong>
+                Alinee la pantalla del Exigo
+            </strong>
+
+            <span>
+                Coloque las cuatro esquinas de la pantalla dentro de las guías
+            </span>
+
+        </div>
+
 
         <div id="screen-guide" class="screen-guide">
 
@@ -95,26 +85,8 @@
             <div class="guide-corner corner-bl"></div>
             <div class="guide-corner corner-br"></div>
 
-
-            <div class="guide-center">
-
-                <strong>
-                    Alinee la pantalla
-                </strong>
-
-                <span>
-                    Coloque las cuatro esquinas de la
-                    pantalla del Exigo dentro de las guías
-                </span>
-
-            </div>
-
         </div>
 
-
-        <!-- ==================================================
-             ESTADO DE CALIDAD
-        =================================================== -->
 
         <div class="quality-panel">
 
@@ -142,24 +114,15 @@
 
             <div class="quality-details">
 
-                <span
-                    id="check-light"
-                    class="mini-check"
-                >
+                <span id="check-light" class="mini-check">
                     Luz
                 </span>
 
-                <span
-                    id="check-sharpness"
-                    class="mini-check"
-                >
+                <span id="check-sharpness" class="mini-check">
                     Nitidez
                 </span>
 
-                <span
-                    id="check-glare"
-                    class="mini-check"
-                >
+                <span id="check-glare" class="mini-check">
                     Reflejo
                 </span>
 
@@ -169,10 +132,6 @@
 
     </main>
 
-
-    <!-- ==================================================
-         CONTROLES
-    =================================================== -->
 
     <footer class="camera-controls">
 
@@ -185,7 +144,6 @@
             id="capture-button"
             class="shutter-button"
             type="button"
-            disabled
             aria-label="Tomar fotografía"
         >
             <span></span>
@@ -213,10 +171,6 @@
 </div>
 
 
-<!-- ======================================================
-     REVISIÓN DE LA FOTO
-======================================================= -->
-
 <section
     id="photo-review"
     class="photo-review"
@@ -233,11 +187,9 @@
             Repetir
         </button>
 
-
         <strong>
             Revisar fotografía
         </strong>
-
 
         <span class="header-spacer"></span>
 
@@ -252,7 +204,6 @@
                 id="captured-preview"
                 alt="Fotografía capturada del Exigo"
             >
-
 
             <div class="review-guide">
 
@@ -289,7 +240,6 @@
             id="use-photo-button"
             class="button button-primary"
             type="button"
-            disabled
         >
             Usar fotografía
         </button>
@@ -298,10 +248,6 @@
 
 </section>
 
-
-<!-- ======================================================
-     PROCESANDO
-======================================================= -->
 
 <section
     id="processing-screen"
@@ -325,10 +271,6 @@
 
 </section>
 
-
-<!-- ======================================================
-     RESULTADO TEMPORAL
-======================================================= -->
 
 <section
     id="result-screen"
@@ -375,9 +317,8 @@
                 </strong>
 
                 <p>
-                    La imagen fue recortada utilizando
-                    las guías y está lista para la
-                    lectura de resultados.
+                    La imagen fue recortada utilizando las guías
+                    y está lista para la lectura de resultados.
                 </p>
 
             </div>

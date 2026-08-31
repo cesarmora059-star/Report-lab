@@ -1,7 +1,3 @@
-/* =========================================================
-   BASE
-========================================================= */
-
 * {
     box-sizing: border-box;
 }
@@ -126,9 +122,7 @@ a {
 }
 
 .button-primary:disabled {
-    background: #8fa9b2;
-    opacity: 0.6;
-    cursor: default;
+    opacity: 0.45;
 }
 
 .button-secondary {
@@ -238,17 +232,67 @@ a {
 
 
 /* =========================================================
-   GUÍA DE CUATRO ESQUINAS
+   INSTRUCCIONES
+========================================================= */
+
+.guide-instructions {
+    position: absolute;
+
+    z-index: 18;
+
+    left: 50%;
+    top: 5.5%;
+
+    width: min(86%, 420px);
+
+    transform: translateX(-50%);
+
+    text-align: center;
+
+    pointer-events: none;
+
+    text-shadow:
+        0 2px 8px
+        rgba(0, 0, 0, 0.9);
+}
+
+.guide-instructions strong {
+    display: block;
+
+    color: #ffffff;
+
+    font-size: 16px;
+}
+
+.guide-instructions span {
+    display: block;
+
+    margin-top: 5px;
+
+    color: rgba(
+        255,
+        255,
+        255,
+        0.86
+    );
+
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+
+/* =========================================================
+   GUÍA EXIGO
 ========================================================= */
 
 .screen-guide {
     position: absolute;
 
-    left: 7%;
-    top: 20%;
+    left: 18%;
+    top: 16%;
 
-    width: 86%;
-    height: 58%;
+    width: 64%;
+    height: 62%;
 
     z-index: 10;
 
@@ -258,8 +302,8 @@ a {
 .guide-corner {
     position: absolute;
 
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
 }
 
 .guide-corner::before,
@@ -272,7 +316,7 @@ a {
         255,
         255,
         255,
-        0.95
+        0.96
     );
 
     border-radius: 3px;
@@ -283,18 +327,22 @@ a {
             0,
             0,
             0,
-            0.4
+            0.45
         );
+
+    transition:
+        background 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .guide-corner::before {
-    width: 44px;
+    width: 42px;
     height: 4px;
 }
 
 .guide-corner::after {
     width: 4px;
-    height: 44px;
+    height: 42px;
 }
 
 .corner-tl {
@@ -320,43 +368,33 @@ a {
     transform: rotate(270deg);
 }
 
-.guide-center {
-    position: absolute;
 
-    left: 50%;
-    top: 50%;
+.screen-guide.guide-good
+.guide-corner::before,
 
-    width: min(82%, 360px);
+.screen-guide.guide-good
+.guide-corner::after {
 
-    transform:
-        translate(-50%, -50%);
+    background: #72e7b4;
 
-    text-align: center;
-
-    text-shadow:
-        0 1px 8px
-        rgba(0, 0, 0, 0.9);
+    box-shadow:
+        0 0 10px
+        rgba(
+            114,
+            231,
+            180,
+            0.65
+        );
 }
 
-.guide-center strong {
-    display: block;
-    font-size: 16px;
-}
 
-.guide-center span {
-    display: block;
+.screen-guide.guide-warning
+.guide-corner::before,
 
-    margin-top: 7px;
+.screen-guide.guide-warning
+.guide-corner::after {
 
-    color: rgba(
-        255,
-        255,
-        255,
-        0.86
-    );
-
-    font-size: 12px;
-    line-height: 1.4;
+    background: #ffd176;
 }
 
 
@@ -375,7 +413,7 @@ a {
         0,
         0,
         0,
-        0.32
+        0.28
     );
 }
 
@@ -384,7 +422,7 @@ a {
     top: 0;
 
     width: 100%;
-    height: 20%;
+    height: 16%;
 }
 
 .camera-shade-bottom {
@@ -397,18 +435,18 @@ a {
 
 .camera-shade-left {
     left: 0;
-    top: 20%;
+    top: 16%;
 
-    width: 7%;
-    height: 58%;
+    width: 18%;
+    height: 62%;
 }
 
 .camera-shade-right {
     right: 0;
-    top: 20%;
+    top: 16%;
 
-    width: 7%;
-    height: 58%;
+    width: 18%;
+    height: 62%;
 }
 
 
@@ -560,7 +598,7 @@ a {
 
 
 /* =========================================================
-   CONTROLES DE CÁMARA
+   CONTROLES
 ========================================================= */
 
 .camera-controls {
@@ -723,11 +761,11 @@ a {
 .review-guide {
     position: absolute;
 
-    left: 7%;
-    top: 20%;
+    left: 18%;
+    top: 16%;
 
-    width: 86%;
-    height: 58%;
+    width: 64%;
+    height: 62%;
 
     pointer-events: none;
 }
@@ -1000,7 +1038,7 @@ a {
 
 
 /* =========================================================
-   TABLET / DESKTOP
+   DESKTOP
 ========================================================= */
 
 @media (min-width: 760px) {
@@ -1020,7 +1058,12 @@ a {
     }
 
     .screen-guide {
-        left: 9%;
-        width: 82%;
+        left: 22%;
+        width: 56%;
+    }
+
+    .review-guide {
+        left: 22%;
+        width: 56%;
     }
 }

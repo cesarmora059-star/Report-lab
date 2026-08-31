@@ -10,132 +10,86 @@ document.addEventListener(
 async function iniciarAplicacion() {
 
     const cameraApp =
-        document.querySelector(
-            '#camera-app'
-        );
+        document.querySelector('#camera-app');
 
     const video =
-        document.querySelector(
-            '#camera-video'
-        );
+        document.querySelector('#camera-video');
 
     const canvas =
-        document.querySelector(
-            '#analysis-canvas'
-        );
+        document.querySelector('#analysis-canvas');
 
     const captureButton =
-        document.querySelector(
-            '#capture-button'
-        );
+        document.querySelector('#capture-button');
 
     const fileButton =
-        document.querySelector(
-            '#file-button'
-        );
+        document.querySelector('#file-button');
 
     const fileInput =
-        document.querySelector(
-            '#file-input'
-        );
+        document.querySelector('#file-input');
 
 
     const qualityDot =
-        document.querySelector(
-            '#quality-dot'
-        );
+        document.querySelector('#quality-dot');
 
     const qualityTitle =
-        document.querySelector(
-            '#quality-title'
-        );
+        document.querySelector('#quality-title');
 
     const qualityMessage =
-        document.querySelector(
-            '#quality-message'
-        );
+        document.querySelector('#quality-message');
 
 
     const checkLight =
-        document.querySelector(
-            '#check-light'
-        );
+        document.querySelector('#check-light');
 
     const checkSharpness =
-        document.querySelector(
-            '#check-sharpness'
-        );
+        document.querySelector('#check-sharpness');
 
     const checkGlare =
-        document.querySelector(
-            '#check-glare'
-        );
+        document.querySelector('#check-glare');
+
+
+    const screenGuide =
+        document.querySelector('#screen-guide');
 
 
     const review =
-        document.querySelector(
-            '#photo-review'
-        );
+        document.querySelector('#photo-review');
 
     const preview =
-        document.querySelector(
-            '#captured-preview'
-        );
+        document.querySelector('#captured-preview');
 
     const finalQuality =
-        document.querySelector(
-            '#final-quality'
-        );
+        document.querySelector('#final-quality');
 
     const cancelReview =
-        document.querySelector(
-            '#cancel-review'
-        );
+        document.querySelector('#cancel-review');
 
     const retakeButton =
-        document.querySelector(
-            '#retake-button'
-        );
+        document.querySelector('#retake-button');
 
     const usePhotoButton =
-        document.querySelector(
-            '#use-photo-button'
-        );
+        document.querySelector('#use-photo-button');
 
 
     const processing =
-        document.querySelector(
-            '#processing-screen'
-        );
+        document.querySelector('#processing-screen');
 
     const processingMessage =
-        document.querySelector(
-            '#processing-message'
-        );
+        document.querySelector('#processing-message');
 
 
     const resultScreen =
-        document.querySelector(
-            '#result-screen'
-        );
+        document.querySelector('#result-screen');
 
     const normalizedPreview =
-        document.querySelector(
-            '#normalized-preview'
-        );
+        document.querySelector('#normalized-preview');
 
     const newPhotoButton =
-        document.querySelector(
-            '#new-photo-button'
-        );
+        document.querySelector('#new-photo-button');
 
 
     let currentCapture = null;
 
-
-    /* =====================================================
-       CALIDAD EN PANTALLA
-    ===================================================== */
 
     function setCheck(
         element,
@@ -154,9 +108,32 @@ async function iniciarAplicacion() {
     }
 
 
-    function updateQuality(
-        quality
-    ) {
+    function updateGuideQuality(level) {
+
+        screenGuide.classList.remove(
+            'guide-good',
+            'guide-warning'
+        );
+
+
+        if (level === 'good') {
+
+            screenGuide.classList.add(
+                'guide-good'
+            );
+
+        } else if (
+            level === 'acceptable'
+        ) {
+
+            screenGuide.classList.add(
+                'guide-warning'
+            );
+        }
+    }
+
+
+    function updateQuality(quality) {
 
         if (!quality) {
             return;
@@ -181,21 +158,72 @@ async function iniciarAplicacion() {
         );
 
 
+        updateGuideQuality(
+            quality.qualityLevel
+        );
+
+
+        /*
+         * IMPORTANTE:
+         * El botón ya NO se bloquea.
+         */
+
+        captureButton.disabled = false;
+
+
         if (
-            quality.acceptable
+            quality.qualityLevel === 'good'
         ) {
 
             qualityDot.className =
                 'quality-dot good';
 
             qualityTitle.textContent =
-                'Buena captura';
+                'Lista para capturar';
 
             qualityMessage.textContent =
-                'Mantenga el teléfono firme';
+                'La calidad de imagen es buena';
 
-            captureButton.disabled =
-                false;
+            return;
+        }
+
+
+        if (
+            quality.qualityLevel === 'acceptable'
+        ) {
+
+            qualityDot.className =
+                'quality-dot warning';
+
+            qualityTitle.textContent =
+                'Puede capturar';
+
+            if (
+                !quality.checks.sharpness
+            ) {
+
+                qualityMessage.textContent =
+                    'Mejore la nitidez si es posible';
+
+            } else if (
+                !quality.checks.glare
+            ) {
+
+                qualityMessage.textContent =
+                    'Evite un poco más el reflejo';
+
+            } else if (
+                !quality.checks.light
+            ) {
+
+                qualityMessage.textContent =
+                    'Ajuste ligeramente la iluminación';
+
+            } else {
+
+                qualityMessage.textContent =
+                    'La imagen es utilizable';
+            }
 
             return;
         }
@@ -204,19 +232,16 @@ async function iniciarAplicacion() {
         qualityDot.className =
             'quality-dot warning';
 
-        captureButton.disabled =
-            true;
+        qualityTitle.textContent =
+            'Puede capturar, pero recomendamos ajustar';
 
 
         if (
             !quality.checks.sharpness
         ) {
 
-            qualityTitle.textContent =
-                'Mantenga el teléfono firme';
-
             qualityMessage.textContent =
-                'La imagen todavía está borrosa';
+                'Mantenga el teléfono más firme';
 
             return;
         }
@@ -225,9 +250,6 @@ async function iniciarAplicacion() {
         if (
             !quality.checks.glare
         ) {
-
-            qualityTitle.textContent =
-                'Evite el reflejo';
 
             qualityMessage.textContent =
                 'Cambie ligeramente el ángulo';
@@ -240,41 +262,24 @@ async function iniciarAplicacion() {
             !quality.checks.light
         ) {
 
-            qualityTitle.textContent =
-                'Ajuste la iluminación';
-
             qualityMessage.textContent =
-                'La pantalla no se distingue bien';
+                'La iluminación puede mejorar';
 
             return;
         }
 
 
-        qualityTitle.textContent =
-            'Alinee la pantalla';
-
         qualityMessage.textContent =
-            'Use las cuatro esquinas como guía';
+            'Alinee mejor la pantalla';
     }
 
 
-    /* =====================================================
-       INICIAR CÁMARA
-    ===================================================== */
-
     async function startCamera() {
 
-        cameraApp.hidden =
-            false;
-
-        review.hidden =
-            true;
-
-        processing.hidden =
-            true;
-
-        resultScreen.hidden =
-            true;
+        cameraApp.hidden = false;
+        review.hidden = true;
+        processing.hidden = true;
+        resultScreen.hidden = true;
 
 
         qualityDot.className =
@@ -286,8 +291,12 @@ async function iniciarAplicacion() {
         qualityMessage.textContent =
             'Un momento';
 
-        captureButton.disabled =
-            true;
+
+        /*
+         * Botón activo desde el inicio.
+         */
+
+        captureButton.disabled = false;
 
 
         try {
@@ -332,13 +341,7 @@ async function iniciarAplicacion() {
     }
 
 
-    /* =====================================================
-       MOSTRAR REVISIÓN
-    ===================================================== */
-
-    function showReview(
-        capture
-    ) {
+    function showReview(capture) {
 
         currentCapture =
             capture;
@@ -347,17 +350,10 @@ async function iniciarAplicacion() {
         VetLabCamera.stop();
 
 
-        cameraApp.hidden =
-            true;
-
-        review.hidden =
-            false;
-
-        processing.hidden =
-            true;
-
-        resultScreen.hidden =
-            true;
+        cameraApp.hidden = true;
+        review.hidden = false;
+        processing.hidden = true;
+        resultScreen.hidden = true;
 
 
         preview.src =
@@ -376,7 +372,7 @@ async function iniciarAplicacion() {
         ) {
 
             problems.push(
-                'Iluminación'
+                'iluminación'
             );
         }
 
@@ -386,7 +382,7 @@ async function iniciarAplicacion() {
         ) {
 
             problems.push(
-                'Nitidez'
+                'nitidez'
             );
         }
 
@@ -396,56 +392,74 @@ async function iniciarAplicacion() {
         ) {
 
             problems.push(
-                'Reflejos'
+                'reflejos'
             );
         }
 
 
+        /*
+         * Siempre permitimos usar la fotografía.
+         */
+
+        usePhotoButton.disabled = false;
+
+
         if (
-            quality.acceptable
+            quality.qualityLevel === 'good'
         ) {
 
             finalQuality.className =
                 'final-quality good';
 
             finalQuality.innerHTML = `
-                <strong>✓ Fotografía aceptable</strong>
+                <strong>✓ Buena fotografía</strong>
                 <span>
-                    Revise que las cuatro esquinas de la
-                    pantalla estén dentro de las guías.
+                    La calidad es adecuada para intentar la lectura.
+                    Confirme que toda la pantalla esté dentro de las guías.
                 </span>
             `;
 
-            usePhotoButton.disabled =
-                false;
+            return;
+        }
 
-        } else {
+
+        if (
+            quality.qualityLevel === 'acceptable'
+        ) {
 
             finalQuality.className =
                 'final-quality warning';
 
             finalQuality.innerHTML = `
-                <strong>⚠ Recomendamos repetirla</strong>
+                <strong>⚠ Fotografía utilizable</strong>
                 <span>
-                    Revisar: ${problems.join(', ')}.
+                    Puede continuar.
+                    ${problems.length
+                        ? `Sería mejor mejorar: ${problems.join(', ')}.`
+                        : ''
+                    }
                 </span>
             `;
 
-            /*
-             * En una prueba clínica prefiero no
-             * aceptar automáticamente una foto
-             * que sabemos que tiene mala calidad.
-             */
-
-            usePhotoButton.disabled =
-                true;
+            return;
         }
+
+
+        finalQuality.className =
+            'final-quality warning';
+
+        finalQuality.innerHTML = `
+            <strong>⚠ Recomendamos repetirla</strong>
+            <span>
+                Puede usarla si lo desea, pero detectamos:
+                ${problems.length
+                    ? problems.join(', ')
+                    : 'calidad limitada'
+                }.
+            </span>
+        `;
     }
 
-
-    /* =====================================================
-       TOMAR FOTO
-    ===================================================== */
 
     captureButton.addEventListener(
         'click',
@@ -456,9 +470,7 @@ async function iniciarAplicacion() {
                 const capture =
                     VetLabCamera.capture();
 
-                showReview(
-                    capture
-                );
+                showReview(capture);
 
             } catch (error) {
 
@@ -471,10 +483,6 @@ async function iniciarAplicacion() {
         }
     );
 
-
-    /* =====================================================
-       GALERÍA
-    ===================================================== */
 
     fileButton.addEventListener(
         'click',
@@ -505,9 +513,7 @@ async function iniciarAplicacion() {
                         file
                     );
 
-                showReview(
-                    capture
-                );
+                showReview(capture);
 
             } catch (error) {
 
@@ -524,14 +530,9 @@ async function iniciarAplicacion() {
     );
 
 
-    /* =====================================================
-       REPETIR
-    ===================================================== */
-
     async function retake() {
 
-        currentCapture =
-            null;
+        currentCapture = null;
 
         await startCamera();
     }
@@ -555,38 +556,23 @@ async function iniciarAplicacion() {
     );
 
 
-    /* =====================================================
-       USAR FOTO
-    ===================================================== */
-
     usePhotoButton.addEventListener(
         'click',
         async () => {
 
-            if (
-                !currentCapture ||
-                !currentCapture.quality.acceptable
-            ) {
+            if (!currentCapture) {
 
                 return;
             }
 
 
-            review.hidden =
-                true;
-
-            processing.hidden =
-                false;
+            review.hidden = true;
+            processing.hidden = false;
 
 
             processingMessage.textContent =
                 'Normalizando pantalla del Exigo…';
 
-
-            /*
-             * Permitimos que Safari dibuje la
-             * pantalla de procesamiento.
-             */
 
             await new Promise(
                 resolve =>
@@ -596,14 +582,6 @@ async function iniciarAplicacion() {
                     )
             );
 
-
-            /*
-             * Guardamos temporalmente la imagen
-             * normalizada.
-             *
-             * En el siguiente paso esta será
-             * enviada al nuevo lector OCR.
-             */
 
             try {
 
@@ -629,7 +607,7 @@ async function iniciarAplicacion() {
                 resolve =>
                     setTimeout(
                         resolve,
-                        400
+                        350
                     )
             );
 
@@ -638,18 +616,11 @@ async function iniciarAplicacion() {
                 currentCapture.normalized;
 
 
-            processing.hidden =
-                true;
-
-            resultScreen.hidden =
-                false;
+            processing.hidden = true;
+            resultScreen.hidden = false;
         }
     );
 
-
-    /* =====================================================
-       INICIO
-    ===================================================== */
 
     await startCamera();
 }
