@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <meta name="theme-color" content="#071014">
+
+    <title>Entrenamiento Exigo AI</title>
+
+
+    <link
+        rel="stylesheet"
+        href="./css/style.css"
+    >
+
+
+    <link
+        rel="stylesheet"
+        href="./css/entrenamiento.css"
+    >
+
+
+    <!-- Para exportar dataset -->
+
+    <script
+        defer
+        src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"
+    ></script>
+
+
+    <script
+        defer
+        src="./js/camara.js"
+    ></script>
+
+
+    <script
+        defer
+        src="./js/exigo-config.js"
+    ></script>
+
+
+    <script
+        defer
+        src="./js/entrenamiento.js"
+    ></script>
+
+</head>
+
+
+<body class="training-page">
+
+
+<header class="training-header">
+
+    <a
+        href="./index.html"
+        class="training-back"
+    >
+        ←
+    </a>
+
+
+    <div>
+
+        <h1>
+            Exigo AI Trainer
+        </h1>
+
+        <p>
+            Crear ejemplos reales para entrenar el lector
+        </p>
+
+    </div>
+
+</header>
+
+
+
+<main class="training-container">
+
+
+    <!-- ==================================================
+         PASO 1
+    =================================================== -->
+
+    <section
+        id="capture-section"
+        class="training-card"
+    >
+
+        <div class="training-title">
+
+            <span class="step-number">
+                1
+            </span>
+
+
+            <div>
+
+                <h2>
+                    Capturar pantalla
+                </h2>
+
+                <p>
+                    Alinee el Exigo exactamente igual
+                    que en el lector normal.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="training-camera">
+
+            <video
+                id="training-video"
+                autoplay
+                playsinline
+                muted
+            ></video>
+
+
+            <canvas
+                id="training-camera-canvas"
+                hidden
+            ></canvas>
+
+
+            <div
+                id="training-guide"
+                class="training-guide"
+            >
+
+                <span class="train-corner train-tl"></span>
+                <span class="train-corner train-tr"></span>
+                <span class="train-corner train-bl"></span>
+                <span class="train-corner train-br"></span>
+
+            </div>
+
+        </div>
+
+
+        <div class="training-camera-actions">
+
+            <button
+                id="capture-training"
+                class="button button-primary"
+                type="button"
+            >
+                Tomar fotografía
+            </button>
+
+
+            <button
+                id="select-training-photo"
+                class="button button-secondary"
+                type="button"
+            >
+                Elegir de Fotos
+            </button>
+
+
+            <input
+                id="training-file"
+                type="file"
+                accept="image/*"
+                hidden
+            >
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ==================================================
+         PASO 2
+    =================================================== -->
+
+    <section
+        id="label-section"
+        class="training-card"
+        hidden
+    >
+
+        <div class="training-title">
+
+            <span class="step-number">
+                2
+            </span>
+
+
+            <div>
+
+                <h2>
+                    Etiquetar lectura
+                </h2>
+
+                <p>
+                    Escriba exactamente lo que aparece
+                    en la pantalla del Exigo.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="species-selector">
+
+            <label>
+
+                <span>
+                    Especie
+                </span>
+
+
+                <select id="training-species">
+
+                    <option value="perro">
+                        DOG · Canino
+                    </option>
+
+                    <option value="gato">
+                        CAT · Felino
+                    </option>
+
+                </select>
+
+            </label>
+
+        </div>
+
+
+        <details
+            class="training-full-image"
+        >
+
+            <summary>
+                Ver pantalla normalizada completa
+            </summary>
+
+
+            <img
+                id="training-normalized-preview"
+                alt="Pantalla Exigo"
+            >
+
+        </details>
+
+
+        <div
+            id="training-fields"
+            class="training-fields"
+        >
+        </div>
+
+
+        <div class="training-save-actions">
+
+            <button
+                id="discard-sample"
+                class="button button-secondary"
+                type="button"
+            >
+                Descartar
+            </button>
+
+
+            <button
+                id="save-sample"
+                class="button button-primary"
+                type="button"
+            >
+                Guardar ejemplo
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ==================================================
+         DATASET
+    =================================================== -->
+
+    <section class="training-card">
+
+        <div class="training-title">
+
+            <span class="step-number">
+                3
+            </span>
+
+
+            <div>
+
+                <h2>
+                    Dataset
+                </h2>
+
+                <p>
+                    Ejemplos guardados únicamente
+                    en este dispositivo.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="dataset-stats">
+
+            <div>
+
+                <span>
+                    Hemogramas
+                </span>
+
+                <strong id="dataset-count">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Recortes
+                </span>
+
+                <strong id="crop-count">
+                    0
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="dataset-actions">
+
+            <button
+                id="export-dataset"
+                class="button button-primary"
+                type="button"
+            >
+                Exportar dataset
+            </button>
+
+
+            <button
+                id="clear-dataset"
+                class="button danger-button"
+                type="button"
+            >
+                Borrar dataset
+            </button>
+
+        </div>
+
+
+        <p class="training-note">
+
+            Exportar genera un ZIP con las imágenes
+            recortadas y un archivo JSON con sus etiquetas.
+            Ese será el material que utilizaremos para
+            entrenar la IA.
+
+        </p>
+
+    </section>
+
+</main>
+
+</body>
+</html>
