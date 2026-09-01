@@ -20,18 +20,23 @@
         href="./css/style.css"
     >
 
-
     <link
         rel="stylesheet"
         href="./css/entrenamiento.css"
     >
 
 
-    <!-- Para exportar dataset -->
-
+    <!-- ZIP -->
     <script
         defer
         src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"
+    ></script>
+
+
+    <!-- OpenCV -->
+    <script
+        async
+        src="https://docs.opencv.org/4.x/opencv.js"
     ></script>
 
 
@@ -40,12 +45,16 @@
         src="./js/camara.js"
     ></script>
 
-
     <script
         defer
         src="./js/exigo-config.js"
     ></script>
 
+    <!-- NUEVO -->
+    <script
+        defer
+        src="./js/perspectiva.js"
+    ></script>
 
     <script
         defer
@@ -75,7 +84,7 @@
         </h1>
 
         <p>
-            Crear ejemplos reales para entrenar el lector
+            Calibración y creación del dataset
         </p>
 
     </div>
@@ -88,7 +97,7 @@
 
 
     <!-- ==================================================
-         PASO 1
+         PASO 1 · CAPTURA
     =================================================== -->
 
     <section
@@ -110,8 +119,7 @@
                 </h2>
 
                 <p>
-                    Alinee el Exigo exactamente igual
-                    que en el lector normal.
+                    Coloque la pantalla del Exigo dentro de las guías.
                 </p>
 
             </div>
@@ -184,11 +192,11 @@
 
 
     <!-- ==================================================
-         PASO 2
+         PASO 2 · PERSPECTIVA
     =================================================== -->
 
     <section
-        id="label-section"
+        id="perspective-section"
         class="training-card"
         hidden
     >
@@ -203,12 +211,201 @@
             <div>
 
                 <h2>
-                    Etiquetar lectura
+                    Ajustar pantalla
+                </h2>
+
+                <p id="perspective-description">
+                    Buscando automáticamente las esquinas del LCD…
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="perspective-status"
+            class="perspective-status checking"
+        >
+
+            <strong>
+                Detectando pantalla
+            </strong>
+
+            <span>
+                Espere un momento…
+            </span>
+
+        </div>
+
+
+        <div class="perspective-workspace">
+
+
+            <!-- IMAGEN ORIGINAL -->
+
+            <div>
+
+                <h3>
+                    Pantalla detectada
+                </h3>
+
+
+                <div
+                    id="corner-editor"
+                    class="corner-editor"
+                >
+
+                    <img
+                        id="perspective-source"
+                        alt="Pantalla antes de corregir perspectiva"
+                    >
+
+
+                    <svg
+                        id="perspective-overlay"
+                        class="perspective-overlay"
+                        viewBox="0 0 1000 1000"
+                        preserveAspectRatio="none"
+                    >
+
+                        <polygon
+                            id="perspective-polygon"
+                            points=""
+                        ></polygon>
+
+                    </svg>
+
+
+                    <button
+                        class="corner-handle"
+                        id="corner-tl"
+                        data-corner="tl"
+                        type="button"
+                        aria-label="Esquina superior izquierda"
+                    ></button>
+
+
+                    <button
+                        class="corner-handle"
+                        id="corner-tr"
+                        data-corner="tr"
+                        type="button"
+                        aria-label="Esquina superior derecha"
+                    ></button>
+
+
+                    <button
+                        class="corner-handle"
+                        id="corner-br"
+                        data-corner="br"
+                        type="button"
+                        aria-label="Esquina inferior derecha"
+                    ></button>
+
+
+                    <button
+                        class="corner-handle"
+                        id="corner-bl"
+                        data-corner="bl"
+                        type="button"
+                        aria-label="Esquina inferior izquierda"
+                    ></button>
+
+                </div>
+
+
+                <p class="corner-help">
+                    Si alguna esquina no coincide con el LCD,
+                    arrastre el punto hasta la esquina correcta.
+                </p>
+
+            </div>
+
+
+
+            <!-- PREVIEW RECTIFICADO -->
+
+            <div>
+
+                <h3>
+                    Resultado corregido
+                </h3>
+
+
+                <div class="rectified-preview">
+
+                    <img
+                        id="rectified-image"
+                        alt="Pantalla corregida"
+                    >
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="perspective-actions">
+
+            <button
+                id="perspective-repeat"
+                class="button button-secondary"
+                type="button"
+            >
+                Repetir foto
+            </button>
+
+
+            <button
+                id="perspective-auto"
+                class="button button-secondary"
+                type="button"
+            >
+                Detectar otra vez
+            </button>
+
+
+            <button
+                id="perspective-confirm"
+                class="button button-primary"
+                type="button"
+            >
+                Usar esta pantalla
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ==================================================
+         PASO 3 · ETIQUETAR
+    =================================================== -->
+
+    <section
+        id="label-section"
+        class="training-card"
+        hidden
+    >
+
+        <div class="training-title">
+
+            <span class="step-number">
+                3
+            </span>
+
+
+            <div>
+
+                <h2>
+                    Revisar recortes
                 </h2>
 
                 <p>
-                    Escriba exactamente lo que aparece
-                    en la pantalla del Exigo.
+                    Cada imagen debe contener exclusivamente su dato.
                 </p>
 
             </div>
@@ -242,9 +439,7 @@
         </div>
 
 
-        <details
-            class="training-full-image"
-        >
+        <details class="training-full-image">
 
             <summary>
                 Ver pantalla normalizada completa
@@ -253,7 +448,7 @@
 
             <img
                 id="training-normalized-preview"
-                alt="Pantalla Exigo"
+                alt="Pantalla Exigo normalizada"
             >
 
         </details>
@@ -262,8 +457,7 @@
         <div
             id="training-fields"
             class="training-fields"
-        >
-        </div>
+        ></div>
 
 
         <div class="training-save-actions">
@@ -300,7 +494,7 @@
         <div class="training-title">
 
             <span class="step-number">
-                3
+                4
             </span>
 
 
@@ -311,8 +505,7 @@
                 </h2>
 
                 <p>
-                    Ejemplos guardados únicamente
-                    en este dispositivo.
+                    Ejemplos almacenados únicamente en este dispositivo.
                 </p>
 
             </div>
@@ -370,16 +563,6 @@
             </button>
 
         </div>
-
-
-        <p class="training-note">
-
-            Exportar genera un ZIP con las imágenes
-            recortadas y un archivo JSON con sus etiquetas.
-            Ese será el material que utilizaremos para
-            entrenar la IA.
-
-        </p>
 
     </section>
 

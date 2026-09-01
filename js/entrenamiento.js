@@ -14,113 +14,150 @@ async function initTraining() {
         window.EXIGO_CONFIG;
 
 
+    const $ =
+        selector =>
+            document.querySelector(
+                selector
+            );
+
+
     const video =
-        document.querySelector(
-            '#training-video'
-        );
+        $('#training-video');
 
 
     const cameraCanvas =
-        document.querySelector(
-            '#training-camera-canvas'
-        );
+        $('#training-camera-canvas');
 
 
     const guide =
-        document.querySelector(
-            '#training-guide'
-        );
+        $('#training-guide');
 
 
     const captureButton =
-        document.querySelector(
-            '#capture-training'
-        );
+        $('#capture-training');
 
 
     const selectPhotoButton =
-        document.querySelector(
-            '#select-training-photo'
-        );
+        $('#select-training-photo');
 
 
     const fileInput =
-        document.querySelector(
-            '#training-file'
-        );
+        $('#training-file');
 
 
     const captureSection =
-        document.querySelector(
-            '#capture-section'
-        );
+        $('#capture-section');
+
+
+    const perspectiveSection =
+        $('#perspective-section');
 
 
     const labelSection =
-        document.querySelector(
-            '#label-section'
-        );
+        $('#label-section');
+
+
+    const perspectiveSource =
+        $('#perspective-source');
+
+
+    const rectifiedImage =
+        $('#rectified-image');
+
+
+    const perspectiveStatus =
+        $('#perspective-status');
+
+
+    const perspectiveDescription =
+        $('#perspective-description');
+
+
+    const cornerEditor =
+        $('#corner-editor');
+
+
+    const polygon =
+        $('#perspective-polygon');
+
+
+    const perspectiveRepeat =
+        $('#perspective-repeat');
+
+
+    const perspectiveAuto =
+        $('#perspective-auto');
+
+
+    const perspectiveConfirm =
+        $('#perspective-confirm');
 
 
     const speciesSelect =
-        document.querySelector(
-            '#training-species'
-        );
+        $('#training-species');
 
 
     const normalizedPreview =
-        document.querySelector(
-            '#training-normalized-preview'
-        );
+        $('#training-normalized-preview');
 
 
     const fieldsContainer =
-        document.querySelector(
-            '#training-fields'
-        );
+        $('#training-fields');
 
 
     const saveButton =
-        document.querySelector(
-            '#save-sample'
-        );
+        $('#save-sample');
 
 
     const discardButton =
-        document.querySelector(
-            '#discard-sample'
-        );
+        $('#discard-sample');
 
 
     const datasetCount =
-        document.querySelector(
-            '#dataset-count'
-        );
+        $('#dataset-count');
 
 
     const cropCount =
-        document.querySelector(
-            '#crop-count'
-        );
+        $('#crop-count');
 
 
     const exportButton =
-        document.querySelector(
-            '#export-dataset'
-        );
+        $('#export-dataset');
 
 
     const clearButton =
-        document.querySelector(
-            '#clear-dataset'
-        );
+        $('#clear-dataset');
 
 
-    let currentNormalizedImage =
+    const handles = {
+
+        tl:
+            $('#corner-tl'),
+
+        tr:
+            $('#corner-tr'),
+
+        br:
+            $('#corner-br'),
+
+        bl:
+            $('#corner-bl')
+    };
+
+
+    let currentGuideImage =
         null;
 
 
-    let currentCanvas =
+    let currentGuideCanvas =
+        null;
+
+
+    let currentPoints =
+        null;
+
+
+    let currentRectifiedCanvas =
         null;
 
 
@@ -128,29 +165,50 @@ async function initTraining() {
         [];
 
 
+    let draggingCorner =
+        null;
+
+
     const database =
         await openDatabase();
 
 
     /* =====================================================
-       INICIAR CÁMARA
+       CÁMARA
     ===================================================== */
 
-    try {
+    async function startCamera() {
 
-        await VetLabCamera.init(
-            video,
-            cameraCanvas,
-            guide
-        );
+        captureSection.hidden =
+            false;
 
-    } catch (error) {
 
-        console.warn(
-            'No se pudo abrir cámara:',
-            error
-        );
+        perspectiveSection.hidden =
+            true;
+
+
+        labelSection.hidden =
+            true;
+
+
+        try {
+
+            await VetLabCamera.init(
+                video,
+                cameraCanvas,
+                guide
+            );
+
+        } catch (error) {
+
+            console.warn(
+                error
+            );
+        }
     }
+
+
+    await startCamera();
 
 
     await updateStats();
@@ -158,7 +216,7 @@ async function initTraining() {
 
 
     /* =====================================================
-       CAPTURAR
+       CAPTURA
     ===================================================== */
 
     captureButton.addEventListener(
@@ -171,7 +229,7 @@ async function initTraining() {
                     VetLabCamera.capture();
 
 
-                prepareSample(
+                beginPerspective(
                     capture.normalized
                 );
 
@@ -191,10 +249,6 @@ async function initTraining() {
 
 
 
-    /* =====================================================
-       GALERÍA
-    ===================================================== */
-
     selectPhotoButton.addEventListener(
         'click',
         () => {
@@ -202,6 +256,7 @@ async function initTraining() {
             fileInput.click();
         }
     );
+
 
 
     fileInput.addEventListener(
@@ -213,6 +268,7 @@ async function initTraining() {
 
 
             if (!file) {
+
                 return;
             }
 
@@ -225,7 +281,7 @@ async function initTraining() {
                     );
 
 
-                prepareSample(
+                beginPerspective(
                     capture.normalized
                 );
 
@@ -250,50 +306,628 @@ async function initTraining() {
 
 
     /* =====================================================
-       ESPECIE
+       PERSPECTIVA
     ===================================================== */
 
-    speciesSelect.addEventListener(
-        'change',
-        () => {
-
-            if (
-                currentCanvas
-            ) {
-
-                renderFields();
-            }
-        }
-    );
-
-
-
-    /* =====================================================
-       PREPARAR MUESTRA
-    ===================================================== */
-
-    async function prepareSample(
+    async function beginPerspective(
         dataURL
     ) {
 
         VetLabCamera.stop();
 
 
-        currentNormalizedImage =
+        currentGuideImage =
             dataURL;
+
+
+        captureSection.hidden =
+            true;
+
+
+        perspectiveSection.hidden =
+            false;
+
+
+        labelSection.hidden =
+            true;
+
+
+        perspectiveSource.src =
+            dataURL;
+
+
+        perspectiveStatus.className =
+            'perspective-status checking';
+
+
+        perspectiveStatus.innerHTML = `
+
+            <strong>
+                Detectando pantalla
+            </strong>
+
+            <span>
+                Buscando las cuatro esquinas del LCD…
+            </span>
+        `;
+
+
+        perspectiveDescription.textContent =
+            'Buscando automáticamente las esquinas del LCD…';
+
+
+        try {
+
+            const detection =
+                await ExigoPerspective.detect(
+                    dataURL
+                );
+
+
+            currentGuideCanvas =
+                detection.canvas;
+
+
+            currentPoints =
+                clonePoints(
+                    detection.points
+                );
+
+
+            if (
+                detection.success
+            ) {
+
+                perspectiveStatus.className =
+                    'perspective-status good';
+
+
+                perspectiveStatus.innerHTML = `
+
+                    <strong>
+                        ✓ Pantalla detectada
+                    </strong>
+
+                    <span>
+                        Revise las cuatro esquinas antes de continuar.
+                    </span>
+                `;
+
+
+                perspectiveDescription.textContent =
+                    'La detección automática encontró un contorno compatible con el LCD.';
+
+            } else {
+
+                perspectiveStatus.className =
+                    'perspective-status warning';
+
+
+                perspectiveStatus.innerHTML = `
+
+                    <strong>
+                        ⚠ Ajuste manual necesario
+                    </strong>
+
+                    <span>
+                        Mueva los cuatro puntos hasta las esquinas reales de la pantalla.
+                    </span>
+                `;
+
+
+                perspectiveDescription.textContent =
+                    'No se encontró una pantalla con suficiente seguridad.';
+            }
+
+
+            await waitForImageLayout();
+
+
+            updateCornerEditor();
+
+
+            updateRectifiedPreview();
+
+
+        } catch (error) {
+
+            console.error(
+                error
+            );
+
+
+            alert(
+                'No se pudo analizar la perspectiva.'
+            );
+
+
+            await startCamera();
+        }
+    }
+
+
+
+    function clonePoints(
+        points
+    ) {
+
+        return {
+
+            tl: {
+                ...points.tl
+            },
+
+            tr: {
+                ...points.tr
+            },
+
+            br: {
+                ...points.br
+            },
+
+            bl: {
+                ...points.bl
+            }
+        };
+    }
+
+
+
+    function waitForImageLayout() {
+
+        return new Promise(
+            resolve => {
+
+                if (
+                    perspectiveSource.complete &&
+                    perspectiveSource.clientWidth
+                ) {
+
+                    requestAnimationFrame(
+                        resolve
+                    );
+
+                    return;
+                }
+
+
+                perspectiveSource.onload =
+                    () =>
+                        requestAnimationFrame(
+                            resolve
+                        );
+            }
+        );
+    }
+
+
+
+    /* =====================================================
+       COORDENADAS IMAGEN ↔ INTERFAZ
+    ===================================================== */
+
+    function imagePointToDisplay(
+        point
+    ) {
+
+        const width =
+            perspectiveSource.clientWidth;
+
+
+        const height =
+            perspectiveSource.clientHeight;
+
+
+        return {
+
+            x:
+                point.x /
+                currentGuideCanvas.width *
+                width,
+
+            y:
+                point.y /
+                currentGuideCanvas.height *
+                height
+        };
+    }
+
+
+
+    function displayPointToImage(
+        x,
+        y
+    ) {
+
+        return {
+
+            x:
+                x /
+                perspectiveSource.clientWidth *
+                currentGuideCanvas.width,
+
+            y:
+                y /
+                perspectiveSource.clientHeight *
+                currentGuideCanvas.height
+        };
+    }
+
+
+
+    function updateCornerEditor() {
+
+        if (
+            !currentPoints
+        ) {
+
+            return;
+        }
+
+
+        const width =
+            perspectiveSource.clientWidth;
+
+
+        const height =
+            perspectiveSource.clientHeight;
+
+
+        const svgPoints = [];
+
+
+        [
+            'tl',
+            'tr',
+            'br',
+            'bl'
+        ]
+            .forEach(
+                key => {
+
+                    const display =
+                        imagePointToDisplay(
+                            currentPoints[
+                                key
+                            ]
+                        );
+
+
+                    const handle =
+                        handles[
+                            key
+                        ];
+
+
+                    handle.style.left =
+                        `${display.x}px`;
+
+
+                    handle.style.top =
+                        `${display.y}px`;
+
+
+                    svgPoints.push(
+
+                        `${display.x / width * 1000},${display.y / height * 1000}`
+                    );
+                }
+            );
+
+
+        polygon.setAttribute(
+            'points',
+            svgPoints.join(
+                ' '
+            )
+        );
+    }
+
+
+
+    function updateRectifiedPreview() {
+
+        if (
+            !currentGuideCanvas ||
+            !currentPoints
+        ) {
+
+            return;
+        }
+
+
+        try {
+
+            currentRectifiedCanvas =
+                ExigoPerspective.rectify(
+
+                    currentGuideCanvas,
+
+                    currentPoints
+                );
+
+
+            rectifiedImage.src =
+                currentRectifiedCanvas
+                    .toDataURL(
+                        'image/jpeg',
+                        0.96
+                    );
+
+
+        } catch (error) {
+
+            console.error(
+                error
+            );
+        }
+    }
+
+
+
+    /* =====================================================
+       ARRASTRAR ESQUINAS
+    ===================================================== */
+
+    Object.entries(
+        handles
+    )
+        .forEach(
+            (
+                [
+                    key,
+                    handle
+                ]
+            ) => {
+
+                handle.addEventListener(
+                    'pointerdown',
+                    event => {
+
+                        draggingCorner =
+                            key;
+
+
+                        handle.setPointerCapture(
+                            event.pointerId
+                        );
+
+
+                        event.preventDefault();
+                    }
+                );
+
+
+                handle.addEventListener(
+                    'pointermove',
+                    event => {
+
+                        if (
+                            draggingCorner !==
+                            key
+                        ) {
+
+                            return;
+                        }
+
+
+                        const rect =
+                            cornerEditor
+                                .getBoundingClientRect();
+
+
+                        let x =
+                            event.clientX -
+                            rect.left;
+
+
+                        let y =
+                            event.clientY -
+                            rect.top;
+
+
+                        x =
+                            Math.max(
+                                0,
+                                Math.min(
+                                    perspectiveSource.clientWidth,
+                                    x
+                                )
+                            );
+
+
+                        y =
+                            Math.max(
+                                0,
+                                Math.min(
+                                    perspectiveSource.clientHeight,
+                                    y
+                                )
+                            );
+
+
+                        currentPoints[
+                            key
+                        ] =
+                            displayPointToImage(
+                                x,
+                                y
+                            );
+
+
+                        updateCornerEditor();
+
+
+                        event.preventDefault();
+                    }
+                );
+
+
+                handle.addEventListener(
+                    'pointerup',
+                    () => {
+
+                        draggingCorner =
+                            null;
+
+
+                        updateRectifiedPreview();
+                    }
+                );
+
+
+                handle.addEventListener(
+                    'pointercancel',
+                    () => {
+
+                        draggingCorner =
+                            null;
+
+
+                        updateRectifiedPreview();
+                    }
+                );
+            }
+        );
+
+
+
+    /* =====================================================
+       REDETECTAR
+    ===================================================== */
+
+    perspectiveAuto.addEventListener(
+        'click',
+        async () => {
+
+            if (
+                !currentGuideImage
+            ) {
+
+                return;
+            }
+
+
+            perspectiveStatus.className =
+                'perspective-status checking';
+
+
+            perspectiveStatus.innerHTML = `
+
+                <strong>
+                    Detectando otra vez
+                </strong>
+
+                <span>
+                    Analizando bordes…
+                </span>
+            `;
+
+
+            try {
+
+                const detection =
+                    await ExigoPerspective.detect(
+                        currentGuideImage
+                    );
+
+
+                currentGuideCanvas =
+                    detection.canvas;
+
+
+                currentPoints =
+                    clonePoints(
+                        detection.points
+                    );
+
+
+                updateCornerEditor();
+
+                updateRectifiedPreview();
+
+
+                perspectiveStatus.className =
+                    detection.success
+                        ? 'perspective-status good'
+                        : 'perspective-status warning';
+
+
+                perspectiveStatus.innerHTML =
+                    detection.success
+                        ? `
+                            <strong>✓ Pantalla detectada</strong>
+                            <span>Revise las esquinas.</span>
+                          `
+                        : `
+                            <strong>⚠ Ajuste manual</strong>
+                            <span>Mueva los cuatro puntos.</span>
+                          `;
+
+
+            } catch (error) {
+
+                console.error(
+                    error
+                );
+            }
+        }
+    );
+
+
+
+    perspectiveRepeat.addEventListener(
+        'click',
+        startCamera
+    );
+
+
+
+    perspectiveConfirm.addEventListener(
+        'click',
+        () => {
+
+            if (
+                !currentRectifiedCanvas
+            ) {
+
+                return;
+            }
+
+
+            prepareLabeling(
+                currentRectifiedCanvas
+            );
+        }
+    );
+
+
+
+    /* =====================================================
+       ETIQUETADO
+    ===================================================== */
+
+    function prepareLabeling(
+        rectifiedCanvas
+    ) {
+
+        currentGuideCanvas =
+            rectifiedCanvas;
+
+
+        const dataURL =
+            rectifiedCanvas
+                .toDataURL(
+                    'image/jpeg',
+                    0.97
+                );
 
 
         normalizedPreview.src =
             dataURL;
 
 
-        currentCanvas =
-            await imageDataURLToCanvas(
-                dataURL
-            );
-
-
-        captureSection.hidden =
+        perspectiveSection.hidden =
             true;
 
 
@@ -305,15 +939,35 @@ async function initTraining() {
 
 
         labelSection.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
+
+            behavior:
+                'smooth',
+
+            block:
+                'start'
         });
     }
 
 
 
+    speciesSelect.addEventListener(
+        'change',
+        () => {
+
+            if (
+                currentGuideCanvas &&
+                !labelSection.hidden
+            ) {
+
+                renderFields();
+            }
+        }
+    );
+
+
+
     /* =====================================================
-       RECORTE
+       RECORTES
     ===================================================== */
 
     function cropRegion(
@@ -363,47 +1017,39 @@ async function initTraining() {
 
 
         output.width =
-            sw * scale;
+            sw *
+            scale;
 
 
         output.height =
-            sh * scale;
+            sh *
+            scale;
 
 
-        const context =
-            output.getContext(
+        output
+            .getContext(
                 '2d'
+            )
+            .drawImage(
+
+                sourceCanvas,
+
+                sx,
+                sy,
+                sw,
+                sh,
+
+                0,
+                0,
+                output.width,
+                output.height
             );
-
-
-        context.imageSmoothingEnabled =
-            true;
-
-
-        context.drawImage(
-
-            sourceCanvas,
-
-            sx,
-            sy,
-            sw,
-            sh,
-
-            0,
-            0,
-            output.width,
-            output.height
-        );
 
 
         return output;
     }
 
 
-
-    /* =====================================================
-       CAMPOS
-    ===================================================== */
 
     function renderFields() {
 
@@ -425,51 +1071,48 @@ async function initTraining() {
             ];
 
 
-        /*
-         * ID
-         */
-
         addTrainingField({
 
-            id: 'owner',
+            id:
+                'owner',
 
-            label: 'ID',
+            label:
+                'ID',
 
-            type: 'text',
+            type:
+                'text',
 
             region:
                 CONFIG.screen.owner
         });
 
 
-        /*
-         * ID2
-         */
-
         addTrainingField({
 
-            id: 'patient',
+            id:
+                'patient',
 
-            label: 'ID2',
+            label:
+                'ID2',
 
-            type: 'text',
+            type:
+                'text',
 
             region:
                 CONFIG.screen.patient
         });
 
 
-        /*
-         * DOG / CAT
-         */
-
         addTrainingField({
 
-            id: 'species',
+            id:
+                'species',
 
-            label: 'DOG / CAT',
+            label:
+                'DOG / CAT',
 
-            type: 'species',
+            type:
+                'species',
 
             fixedValue:
                 profile.code,
@@ -478,10 +1121,6 @@ async function initTraining() {
                 CONFIG.screen.species
         });
 
-
-        /*
-         * PARÁMETROS
-         */
 
         profile.parameters.forEach(
             parameter => {
@@ -515,8 +1154,11 @@ async function initTraining() {
 
         const cropCanvas =
             cropRegion(
-                currentCanvas,
+
+                currentGuideCanvas,
+
                 field.region,
+
                 field.type ===
                     'numeric'
                     ? 5
@@ -525,9 +1167,10 @@ async function initTraining() {
 
 
         const cropDataURL =
-            cropCanvas.toDataURL(
-                'image/png'
-            );
+            cropCanvas
+                .toDataURL(
+                    'image/png'
+                );
 
 
         const card =
@@ -540,21 +1183,7 @@ async function initTraining() {
             'training-field';
 
 
-        let inputMode =
-            'text';
-
-
-        if (
-            field.type ===
-            'numeric'
-        ) {
-
-            inputMode =
-                'decimal';
-        }
-
-
-        const initialValue =
+        const initial =
             field.fixedValue ||
             '';
 
@@ -588,11 +1217,19 @@ async function initTraining() {
 
                 <input
                     type="text"
-                    inputmode="${inputMode}"
+                    inputmode="${
+                        field.type === 'numeric'
+                            ? 'decimal'
+                            : 'text'
+                    }"
                     data-field="${field.id}"
-                    value="${initialValue}"
+                    value="${initial}"
                     autocomplete="off"
-                    ${field.fixedValue ? 'readonly' : ''}
+                    ${
+                        field.fixedValue
+                            ? 'readonly'
+                            : ''
+                    }
                 >
 
             </div>
@@ -615,104 +1252,85 @@ async function initTraining() {
 
 
     /* =====================================================
-       GUARDAR EJEMPLO
+       GUARDAR DATASET
     ===================================================== */
 
     saveButton.addEventListener(
         'click',
         async () => {
 
-            if (
-                !currentCanvas
-            ) {
-
-                return;
-            }
-
-
             const species =
                 speciesSelect.value;
 
 
-            const labels = [];
+            const labels =
+                currentFields.map(
+                    field => {
 
-
-            currentFields.forEach(
-                field => {
-
-                    const input =
-                        document.querySelector(
-                            `[data-field="${field.id}"]`
-                        );
-
-
-                    let value =
-                        input
-                            ? input.value.trim()
-                            : '';
-
-
-                    if (
-                        field.type ===
-                        'text'
-                    ) {
-
-                        value =
-                            value.toUpperCase();
-                    }
-
-
-                    if (
-                        field.type ===
-                        'species'
-                    ) {
-
-                        value =
-                            CONFIG[
-                                species
-                            ].code;
-                    }
-
-
-                    if (
-                        field.type ===
-                        'numeric'
-                    ) {
-
-                        value =
-                            normalizeNumericLabel(
-                                value
+                        const input =
+                            document.querySelector(
+                                `[data-field="${field.id}"]`
                             );
+
+
+                        let value =
+                            input
+                                ? input.value.trim()
+                                : '';
+
+
+                        if (
+                            field.type === 'text'
+                        ) {
+
+                            value =
+                                value.toUpperCase();
+                        }
+
+
+                        if (
+                            field.type === 'species'
+                        ) {
+
+                            value =
+                                CONFIG[
+                                    species
+                                ].code;
+                        }
+
+
+                        if (
+                            field.type === 'numeric'
+                        ) {
+
+                            value =
+                                normalizeNumericLabel(
+                                    value
+                                );
+                        }
+
+
+                        return {
+
+                            id:
+                                field.id,
+
+                            label:
+                                field.label,
+
+                            type:
+                                field.type,
+
+                            value,
+
+                            cropDataURL:
+                                field.cropDataURL
+                        };
                     }
+                );
 
 
-                    /*
-                     * Si un ID está realmente vacío
-                     * simplemente no se utilizará
-                     * como muestra textual.
-                     */
-
-                    labels.push({
-
-                        id:
-                            field.id,
-
-                        label:
-                            field.label,
-
-                        type:
-                            field.type,
-
-                        value,
-
-                        cropDataURL:
-                            field.cropDataURL
-                    });
-                }
-            );
-
-
-            const numericMissing =
+            const missingNumeric =
                 labels.some(
                     item =>
                         item.type ===
@@ -722,11 +1340,11 @@ async function initTraining() {
 
 
             if (
-                numericMissing
+                missingNumeric
             ) {
 
                 alert(
-                    'Complete todos los resultados numéricos antes de guardar.'
+                    'Complete todos los valores numéricos.'
                 );
 
 
@@ -756,289 +1374,30 @@ async function initTraining() {
 
 
             await saveSample(
+
                 database,
+
                 sample
             );
 
 
-            alert(
-                'Ejemplo guardado correctamente.'
-            );
-
-
             await updateStats();
 
 
-            resetCapture();
+            alert(
+                'Ejemplo guardado.'
+            );
+
+
+            await startCamera();
         }
     );
 
 
-
-    /* =====================================================
-       DESCARTAR
-    ===================================================== */
 
     discardButton.addEventListener(
         'click',
-        resetCapture
-    );
-
-
-
-    async function resetCapture() {
-
-        currentNormalizedImage =
-            null;
-
-
-        currentCanvas =
-            null;
-
-
-        currentFields =
-            [];
-
-
-        fieldsContainer.innerHTML =
-            '';
-
-
-        labelSection.hidden =
-            true;
-
-
-        captureSection.hidden =
-            false;
-
-
-        try {
-
-            await VetLabCamera.init(
-                video,
-                cameraCanvas,
-                guide
-            );
-
-        } catch (error) {
-
-            console.warn(
-                error
-            );
-        }
-
-
-        captureSection.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
-    }
-
-
-
-    /* =====================================================
-       EXPORTAR DATASET
-    ===================================================== */
-
-    exportButton.addEventListener(
-        'click',
-        async () => {
-
-            if (
-                !window.JSZip
-            ) {
-
-                alert(
-                    'No se pudo cargar el exportador ZIP.'
-                );
-
-
-                return;
-            }
-
-
-            const samples =
-                await getAllSamples(
-                    database
-                );
-
-
-            if (
-                !samples.length
-            ) {
-
-                alert(
-                    'Todavía no hay ejemplos guardados.'
-                );
-
-
-                return;
-            }
-
-
-            const zip =
-                new JSZip();
-
-
-            const metadata = [];
-
-
-            for (
-                const sample of samples
-            ) {
-
-                const folder =
-                    zip.folder(
-                        sample.id
-                    );
-
-
-                const sampleMeta = {
-
-                    id:
-                        sample.id,
-
-                    createdAt:
-                        sample.createdAt,
-
-                    species:
-                        sample.species,
-
-                    speciesCode:
-                        sample.speciesCode,
-
-                    fields:
-                        []
-                };
-
-
-                for (
-                    const field of sample.fields
-                ) {
-
-                    /*
-                     * Campos vacíos de texto no
-                     * se exportan para entrenamiento.
-                     */
-
-                    if (
-                        field.type === 'text' &&
-                        !field.value
-                    ) {
-
-                        continue;
-                    }
-
-
-                    const safeName =
-                        sanitizeFilename(
-                            field.id
-                        );
-
-
-                    const fileName =
-                        `${safeName}.png`;
-
-
-                    const base64 =
-                        field.cropDataURL.split(
-                            ','
-                        )[1];
-
-
-                    folder.file(
-                        fileName,
-                        base64,
-                        {
-                            base64: true
-                        }
-                    );
-
-
-                    sampleMeta.fields.push({
-
-                        id:
-                            field.id,
-
-                        label:
-                            field.label,
-
-                        type:
-                            field.type,
-
-                        value:
-                            field.value,
-
-                        image:
-                            `${sample.id}/${fileName}`
-                    });
-                }
-
-
-                metadata.push(
-                    sampleMeta
-                );
-            }
-
-
-            zip.file(
-
-                'labels.json',
-
-                JSON.stringify(
-                    metadata,
-                    null,
-                    2
-                )
-            );
-
-
-            const blob =
-                await zip.generateAsync({
-                    type: 'blob'
-                });
-
-
-            downloadBlob(
-
-                blob,
-
-                `exigo_dataset_${dateForFilename()}.zip`
-            );
-        }
-    );
-
-
-
-    /* =====================================================
-       BORRAR DATASET
-    ===================================================== */
-
-    clearButton.addEventListener(
-        'click',
-        async () => {
-
-            const confirmDelete =
-                confirm(
-                    '¿Está seguro de borrar todos los ejemplos guardados en este dispositivo?'
-                );
-
-
-            if (
-                !confirmDelete
-            ) {
-
-                return;
-            }
-
-
-            await clearSamples(
-                database
-            );
-
-
-            await updateStats();
-        }
+        startCamera
     );
 
 
@@ -1061,20 +1420,22 @@ async function initTraining() {
             );
 
 
-        let crops =
-            0;
+        const crops =
+            samples.reduce(
+                (
+                    total,
+                    sample
+                ) =>
 
+                    total +
 
-        samples.forEach(
-            sample => {
-
-                crops +=
                     sample.fields.filter(
                         field =>
                             field.value
-                    ).length;
-            }
-        );
+                    ).length,
+
+                0
+            );
 
 
         cropCount.textContent =
@@ -1082,12 +1443,213 @@ async function initTraining() {
                 crops
             );
     }
+
+
+
+    /* =====================================================
+       EXPORTACIÓN
+    ===================================================== */
+
+    exportButton.addEventListener(
+        'click',
+        async () => {
+
+            const samples =
+                await getAllSamples(
+                    database
+                );
+
+
+            if (
+                !samples.length
+            ) {
+
+                alert(
+                    'No hay ejemplos guardados.'
+                );
+
+
+                return;
+            }
+
+
+            const zip =
+                new JSZip();
+
+
+            const metadata =
+                [];
+
+
+            for (
+                const sample of samples
+            ) {
+
+                const folder =
+                    zip.folder(
+                        sample.id
+                    );
+
+
+                const meta = {
+
+                    id:
+                        sample.id,
+
+                    createdAt:
+                        sample.createdAt,
+
+                    species:
+                        sample.species,
+
+                    speciesCode:
+                        sample.speciesCode,
+
+                    fields:
+                        []
+                };
+
+
+                for (
+                    const field of sample.fields
+                ) {
+
+                    if (
+                        !field.value
+                    ) {
+
+                        continue;
+                    }
+
+
+                    const filename =
+                        `${sanitizeFilename(field.id)}.png`;
+
+
+                    const base64 =
+                        field.cropDataURL
+                            .split(
+                                ','
+                            )[1];
+
+
+                    folder.file(
+
+                        filename,
+
+                        base64,
+
+                        {
+                            base64:
+                                true
+                        }
+                    );
+
+
+                    meta.fields.push({
+
+                        id:
+                            field.id,
+
+                        label:
+                            field.label,
+
+                        type:
+                            field.type,
+
+                        value:
+                            field.value,
+
+                        image:
+                            `${sample.id}/${filename}`
+                    });
+                }
+
+
+                metadata.push(
+                    meta
+                );
+            }
+
+
+            zip.file(
+
+                'labels.json',
+
+                JSON.stringify(
+                    metadata,
+                    null,
+                    2
+                )
+            );
+
+
+            const blob =
+                await zip.generateAsync({
+                    type:
+                        'blob'
+                });
+
+
+            downloadBlob(
+
+                blob,
+
+                `exigo_dataset_${dateForFilename()}.zip`
+            );
+        }
+    );
+
+
+
+    clearButton.addEventListener(
+        'click',
+        async () => {
+
+            if (
+                !confirm(
+                    '¿Borrar todo el dataset de este dispositivo?'
+                )
+            ) {
+
+                return;
+            }
+
+
+            await clearSamples(
+                database
+            );
+
+
+            await updateStats();
+        }
+    );
+
+
+
+    /* =====================================================
+       RESIZE
+    ===================================================== */
+
+    window.addEventListener(
+        'resize',
+        () => {
+
+            if (
+                currentPoints &&
+                !perspectiveSection.hidden
+            ) {
+
+                updateCornerEditor();
+            }
+        }
+    );
 }
 
 
 
 /* =========================================================
-   NORMALIZAR NÚMEROS
+   UTILIDADES
 ========================================================= */
 
 function normalizeNumericLabel(
@@ -1101,7 +1663,7 @@ function normalizeNumericLabel(
         .trim()
 
         .replace(
-            ',',
+            /,/g,
             '.'
         )
 
@@ -1113,342 +1675,43 @@ function normalizeNumericLabel(
 
 
 
-/* =========================================================
-   IMAGEN → CANVAS
-========================================================= */
-
-function imageDataURLToCanvas(
-    dataURL
-) {
-
-    return new Promise(
-        (
-            resolve,
-            reject
-        ) => {
-
-            const image =
-                new Image();
-
-
-            image.onload =
-                () => {
-
-                    const canvas =
-                        document.createElement(
-                            'canvas'
-                        );
-
-
-                    canvas.width =
-                        image.naturalWidth;
-
-
-                    canvas.height =
-                        image.naturalHeight;
-
-
-                    canvas
-                        .getContext(
-                            '2d'
-                        )
-                        .drawImage(
-                            image,
-                            0,
-                            0
-                        );
-
-
-                    resolve(
-                        canvas
-                    );
-                };
-
-
-            image.onerror =
-                reject;
-
-
-            image.src =
-                dataURL;
-        }
-    );
-}
-
-
-
-/* =========================================================
-   ID DE EJEMPLO
-========================================================= */
-
 function createSampleId() {
 
-    const now =
-        new Date();
+    return (
 
+        'EXIGO_' +
 
-    const pad =
-        value =>
-            String(
-                value
-            ).padStart(
-                2,
-                '0'
-            );
+        new Date()
+            .toISOString()
+            .replace(
+                /[-:.TZ]/g,
+                ''
+            )
+            .slice(
+                0,
+                14
+            ) +
 
+        '_' +
 
-    const random =
         Math.random()
             .toString(36)
             .slice(
                 2,
                 6
             )
-            .toUpperCase();
-
-
-    return (
-
-        'EXIGO_' +
-
-        now.getFullYear() +
-
-        pad(
-            now.getMonth() + 1
-        ) +
-
-        pad(
-            now.getDate()
-        ) +
-
-        '_' +
-
-        pad(
-            now.getHours()
-        ) +
-
-        pad(
-            now.getMinutes()
-        ) +
-
-        pad(
-            now.getSeconds()
-        ) +
-
-        '_' +
-
-        random
+            .toUpperCase()
     );
 }
 
 
-
-/* =========================================================
-   INDEXED DB
-========================================================= */
-
-function openDatabase() {
-
-    return new Promise(
-        (
-            resolve,
-            reject
-        ) => {
-
-            const request =
-                indexedDB.open(
-                    'VetLabExigoTraining',
-                    1
-                );
-
-
-            request.onupgradeneeded =
-                event => {
-
-                    const db =
-                        event.target.result;
-
-
-                    if (
-                        !db.objectStoreNames.contains(
-                            'samples'
-                        )
-                    ) {
-
-                        db.createObjectStore(
-                            'samples',
-                            {
-                                keyPath:
-                                    'id'
-                            }
-                        );
-                    }
-                };
-
-
-            request.onsuccess =
-                () => {
-
-                    resolve(
-                        request.result
-                    );
-                };
-
-
-            request.onerror =
-                () => {
-
-                    reject(
-                        request.error
-                    );
-                };
-        }
-    );
-}
-
-
-
-function saveSample(
-    database,
-    sample
-) {
-
-    return new Promise(
-        (
-            resolve,
-            reject
-        ) => {
-
-            const transaction =
-                database.transaction(
-                    'samples',
-                    'readwrite'
-                );
-
-
-            const store =
-                transaction.objectStore(
-                    'samples'
-                );
-
-
-            store.put(
-                sample
-            );
-
-
-            transaction.oncomplete =
-                () => resolve();
-
-
-            transaction.onerror =
-                () =>
-                    reject(
-                        transaction.error
-                    );
-        }
-    );
-}
-
-
-
-function getAllSamples(
-    database
-) {
-
-    return new Promise(
-        (
-            resolve,
-            reject
-        ) => {
-
-            const transaction =
-                database.transaction(
-                    'samples',
-                    'readonly'
-                );
-
-
-            const store =
-                transaction.objectStore(
-                    'samples'
-                );
-
-
-            const request =
-                store.getAll();
-
-
-            request.onsuccess =
-                () =>
-                    resolve(
-                        request.result ||
-                        []
-                    );
-
-
-            request.onerror =
-                () =>
-                    reject(
-                        request.error
-                    );
-        }
-    );
-}
-
-
-
-function clearSamples(
-    database
-) {
-
-    return new Promise(
-        (
-            resolve,
-            reject
-        ) => {
-
-            const transaction =
-                database.transaction(
-                    'samples',
-                    'readwrite'
-                );
-
-
-            const store =
-                transaction.objectStore(
-                    'samples'
-                );
-
-
-            store.clear();
-
-
-            transaction.oncomplete =
-                () => resolve();
-
-
-            transaction.onerror =
-                () =>
-                    reject(
-                        transaction.error
-                    );
-        }
-    );
-}
-
-
-
-/* =========================================================
-   EXPORTACIÓN
-========================================================= */
 
 function sanitizeFilename(
     value
 ) {
 
     return String(
-        value || 'field'
+        value
     )
         .replace(
             /[^a-z0-9_-]/gi,
@@ -1514,10 +1777,195 @@ function downloadBlob(
                 url
             );
 
-
             link.remove();
 
         },
         1000
+    );
+}
+
+
+
+/* =========================================================
+   INDEXED DB
+========================================================= */
+
+function openDatabase() {
+
+    return new Promise(
+        (
+            resolve,
+            reject
+        ) => {
+
+            const request =
+                indexedDB.open(
+                    'VetLabExigoTraining',
+                    1
+                );
+
+
+            request.onupgradeneeded =
+                event => {
+
+                    const database =
+                        event.target.result;
+
+
+                    if (
+                        !database
+                            .objectStoreNames
+                            .contains(
+                                'samples'
+                            )
+                    ) {
+
+                        database
+                            .createObjectStore(
+                                'samples',
+                                {
+                                    keyPath:
+                                        'id'
+                                }
+                            );
+                    }
+                };
+
+
+            request.onsuccess =
+                () =>
+                    resolve(
+                        request.result
+                    );
+
+
+            request.onerror =
+                () =>
+                    reject(
+                        request.error
+                    );
+        }
+    );
+}
+
+
+
+function saveSample(
+    database,
+    sample
+) {
+
+    return new Promise(
+        (
+            resolve,
+            reject
+        ) => {
+
+            const transaction =
+                database.transaction(
+                    'samples',
+                    'readwrite'
+                );
+
+
+            transaction
+                .objectStore(
+                    'samples'
+                )
+                .put(
+                    sample
+                );
+
+
+            transaction.oncomplete =
+                resolve;
+
+
+            transaction.onerror =
+                () =>
+                    reject(
+                        transaction.error
+                    );
+        }
+    );
+}
+
+
+
+function getAllSamples(
+    database
+) {
+
+    return new Promise(
+        (
+            resolve,
+            reject
+        ) => {
+
+            const request =
+                database
+                    .transaction(
+                        'samples',
+                        'readonly'
+                    )
+                    .objectStore(
+                        'samples'
+                    )
+                    .getAll();
+
+
+            request.onsuccess =
+                () =>
+                    resolve(
+                        request.result ||
+                        []
+                    );
+
+
+            request.onerror =
+                () =>
+                    reject(
+                        request.error
+                    );
+        }
+    );
+}
+
+
+
+function clearSamples(
+    database
+) {
+
+    return new Promise(
+        (
+            resolve,
+            reject
+        ) => {
+
+            const transaction =
+                database.transaction(
+                    'samples',
+                    'readwrite'
+                );
+
+
+            transaction
+                .objectStore(
+                    'samples'
+                )
+                .clear();
+
+
+            transaction.oncomplete =
+                resolve;
+
+
+            transaction.onerror =
+                () =>
+                    reject(
+                        transaction.error
+                    );
+        }
     );
 }
